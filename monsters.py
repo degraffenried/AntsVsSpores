@@ -29,20 +29,57 @@ class Monster:
     def draw(self, screen):
         pass
 
-    def has_ground_ahead(self, platforms, check_distance=10):
+    def has_ground_ahead(self, platforms, check_distance=10, screen_height=800):
         """Check if there's ground ahead in the direction the monster is moving.
-        Returns True if safe to continue, False if there's an edge ahead."""
-        # Check a point ahead of the monster and below its feet
+        Returns True if safe to continue, False if there's a deadly drop ahead.
+
+        This method checks:
+        1. Is there ground immediately ahead at foot level?
+        2. If not, is there any platform below to land on before falling off screen?
+        """
+        # Check a point ahead of the monster
         check_x = self.x + (self.width + check_distance) if self.direction > 0 else self.x - check_distance
         check_y = self.y + self.height + 5  # Just below the monster's feet
 
-        # Create a small rect to check for platform collision
+        # First, check for immediate ground ahead
         check_rect = pygame.Rect(check_x, check_y, 5, 10)
-
         for platform in platforms:
             if check_rect.colliderect(platform.rect):
-                return True
+                return True  # Ground immediately ahead, safe to proceed
+
+        # No immediate ground - check if there's any platform below to land on
+        # Scan downward from the edge to see if there's a safe landing
+        return self._has_safe_landing(check_x, self.y + self.height, platforms, screen_height)
+
+    def _has_safe_landing(self, x, start_y, platforms, screen_height=800, max_fall=None):
+        """Check if there's a platform to land on when falling from position (x, start_y).
+        Returns True if there's a safe landing, False if would fall off screen."""
+        if max_fall is None:
+            max_fall = screen_height  # Check all the way to screen bottom
+
+        # Create a vertical scan line from current position down
+        scan_width = self.width  # Use monster's width for the scan
+        scan_x = x - scan_width // 2  # Center the scan on x position
+
+        # Check in vertical increments
+        for check_y in range(int(start_y), int(start_y + max_fall), 20):
+            # If we've gone past screen bottom, no safe landing
+            if check_y > screen_height - 50:  # Leave some margin
+                return False
+
+            scan_rect = pygame.Rect(scan_x, check_y, scan_width, 20)
+            for platform in platforms:
+                if scan_rect.colliderect(platform.rect):
+                    # Found a platform to land on!
+                    return True
+
+        # Reached max fall distance without finding platform
         return False
+
+    def is_safe_to_move(self, platforms, screen_height=800):
+        """Comprehensive safety check before moving in current direction.
+        Returns True if it's safe to continue moving, False if should turn around."""
+        return self.has_ground_ahead(platforms, check_distance=10, screen_height=screen_height)
 
 
 class Walker(Monster):
@@ -649,31 +686,124 @@ class Chompy(Monster):
 
 
 class Snake(Monster):
-    """Slithering snake with multiple body segments"""
-    def __init__(self, x, y, patrol_range, speed, health):
+    """Slithering snake with multiple body segments using position history.
+    Can aggro, lunge at player, wrap around them and bite!"""
+    def __init__(self, x, y, patrol_range, speed, health, aggro_duration=180):
         super().__init__(x, y, patrol_range, speed, health)
-        self.color = (100, 180, 60)
-        self.segments = [(x, y) for _ in range(5)]  # 5 body segments
+        self.color = (80, 140, 50)
+        self.belly_color = (120, 180, 80)
+        self.pattern_color = (50, 100, 30)
+        self.aggro_color = (120, 80, 40)  # Brownish when angry
+
+        # Snake configuration
+        self.num_segments = 12
+        self.segment_spacing = 8  # pixels between segment samples in history
+        self.head_size = 10
+        self.body_width = 7  # max body width
+
+        # Position history - stores past head positions
+        # We need enough history to place all segments
+        self.history_length = self.num_segments * self.segment_spacing
+        self.position_history = [(x + 20, y + 30) for _ in range(self.history_length)]
+
         self.anim = 0
         self.tongue_out = False
+        self.tongue_flick = 0
+        self.slither_phase = 0
+
+        # Aggro state
+        self.aggro_duration = aggro_duration
+        self.is_aggroed = False
+        self.aggro_timer = 0
+        self.detection_range = 120  # How close player needs to be to trigger aggro
+
+        # Lunge state
+        self.is_lunging = False
+        self.lunge_vel_x = 0
+        self.lunge_vel_y = 0
+
+        # Wrap state
+        self.is_wrapped = False
+        self.wrap_target = None  # Reference to player when wrapped
+        self.wrap_angle = 0  # Current angle around player
+        self.wrap_timer = 0
+        self.wrap_duration = 90  # How long to stay wrapped before releasing
+        self.bite_cooldown = 0
+        self.bite_damage = 1
+
+    def take_damage(self, damage):
+        self.health -= damage
+        # Getting hit makes it angry!
+        if not self.is_wrapped:  # Don't reset aggro while wrapped
+            self.is_aggroed = True
+            self.aggro_timer = self.aggro_duration
+        return self.health <= 0
 
     def update(self, platforms, player):
+        self.anim += 1
+        self.slither_phase += 0.25
+
+        # Tongue flicking - more frequent when aggroed
+        self.tongue_flick += 1
+        flick_rate = 40 if self.is_aggroed else 80
+        if self.tongue_flick > flick_rate:
+            self.tongue_flick = 0
+        self.tongue_out = self.tongue_flick < 15
+
+        # Handle wrapped state
+        if self.is_wrapped and self.wrap_target:
+            self._update_wrapped(player)
+            return
+
+        # Check for aggro trigger
+        dist_to_player = math.sqrt((player.x - self.x) ** 2 + (player.y - self.y) ** 2)
+        if dist_to_player < self.detection_range and not self.is_aggroed:
+            self.is_aggroed = True
+            self.aggro_timer = self.aggro_duration
+
+        # Handle aggro timer
+        if self.is_aggroed:
+            self.aggro_timer -= 1
+            if self.aggro_timer <= 0:
+                self.is_aggroed = False
+                self.is_lunging = False
+
+        # Handle lunging state
+        if self.is_lunging:
+            self._update_lunge(platforms, player)
+            return
+
+        # Check if should start lunging at player
+        if self.is_aggroed and not self.is_lunging:
+            # Lunge if player is in range and we're on ground
+            on_ground = self.vel_y == 0 or self.vel_y < 1
+            if dist_to_player < 200 and on_ground:
+                self._start_lunge(player)
+                return
+
+        # Normal patrol movement
         # Apply gravity
         self.vel_y += self.gravity
         if self.vel_y > 20:
             self.vel_y = 20
-
-        self.anim += 1
-        self.tongue_out = (self.anim % 60) < 20
 
         # Check for edge before moving (only when on ground)
         on_ground = self.vel_y == 0
         if on_ground and not self.has_ground_ahead(platforms):
             self.direction *= -1
 
-        # Slithering movement with wave
-        wave = math.sin(self.anim * 0.15) * 2
-        self.x += (self.speed + wave) * self.direction
+        # Movement speed - faster when aggroed
+        if self.is_aggroed:
+            base_speed = self.speed * 2.0
+            # Chase player
+            if player.x > self.x:
+                self.direction = 1
+            else:
+                self.direction = -1
+        else:
+            base_speed = self.speed * 1.2
+
+        self.x += base_speed * self.direction
 
         if self.x > self.spawn_x + self.patrol_range:
             self.direction = -1
@@ -691,67 +821,255 @@ class Snake(Monster):
                     self.y = platform.rect.top - self.height
                     self.vel_y = 0
 
-        # Update segment positions (follow the head)
-        new_segments = [(self.x + 20, self.y + 20)]
-        for i, (sx, sy) in enumerate(self.segments[:-1]):
-            # Each segment follows the one in front with delay
-            target_x, target_y = new_segments[-1]
-            offset = 12  # Distance between segments
-            dx = target_x - sx
-            dy = target_y - sy
-            dist = max(1, math.sqrt(dx * dx + dy * dy))
-            new_x = target_x - (dx / dist) * offset
-            new_y = target_y - (dy / dist) * offset
-            new_segments.append((new_x, new_y + math.sin(self.anim * 0.2 + i) * 3))
-        self.segments = new_segments
+        # Update position history for normal movement
+        self._update_position_history()
+
+    def _start_lunge(self, player):
+        """Start lunging toward the player"""
+        self.is_lunging = True
+
+        # Calculate lunge trajectory
+        dx = player.x - self.x
+        dy = player.y - self.y
+        dist = max(1, math.sqrt(dx * dx + dy * dy))
+
+        # Lunge speed and arc
+        lunge_power = 12
+        self.lunge_vel_x = (dx / dist) * lunge_power
+        self.lunge_vel_y = -8  # Jump up first, then arc down
+
+        self.direction = 1 if dx > 0 else -1
+
+    def _update_lunge(self, platforms, player):
+        """Update snake during lunge"""
+        # Apply gravity to lunge
+        self.lunge_vel_y += self.gravity * 0.8
+
+        # Move
+        self.x += self.lunge_vel_x
+        self.y += self.lunge_vel_y
+
+        # Check if we've hit the player - start wrapping!
+        dist_to_player = math.sqrt((player.x - self.x) ** 2 + (player.y - self.y) ** 2)
+        if dist_to_player < 30:
+            self._start_wrap(player)
+            return
+
+        # Check for landing on platforms
+        monster_rect = self.get_rect()
+        for platform in platforms:
+            if monster_rect.colliderect(platform.rect):
+                if self.lunge_vel_y > 0:
+                    self.y = platform.rect.top - self.height
+                    self.is_lunging = False
+                    self.lunge_vel_y = 0
+                    self.lunge_vel_x = 0
+                    return
+
+        # Check if fallen too far (missed the player)
+        if self.y > self.spawn_y + 200:
+            self.is_lunging = False
+
+        # Update position history during lunge
+        self._update_position_history()
+
+    def _start_wrap(self, player):
+        """Start wrapping around the player"""
+        self.is_wrapped = True
+        self.is_lunging = False
+        self.wrap_target = player
+        self.wrap_timer = self.wrap_duration
+        self.wrap_angle = math.atan2(self.y - player.y, self.x - player.x)
+        self.bite_cooldown = 0
+
+    def _update_wrapped(self, player):
+        """Update snake while wrapped around player"""
+        self.wrap_timer -= 1
+        self.wrap_angle += 0.15  # Rotate around player
+
+        # Follow player position
+        wrap_radius = 25
+        self.x = player.x + math.cos(self.wrap_angle) * wrap_radius - 20
+        self.y = player.y + math.sin(self.wrap_angle) * wrap_radius - 20
+
+        # Bite periodically
+        self.bite_cooldown -= 1
+        if self.bite_cooldown <= 0:
+            player.health -= self.bite_damage
+            self.bite_cooldown = 30  # Bite every 0.5 seconds
+            self.tongue_out = True  # Show tongue when biting
+
+        # Update position history to wrap around player
+        center_x = player.x + player.width // 2
+        center_y = player.y + player.height // 2
+        for i in range(len(self.position_history)):
+            angle = self.wrap_angle - i * 0.25
+            radius = wrap_radius + (i * 0.5)  # Spiral outward slightly
+            hx = center_x + math.cos(angle) * radius
+            hy = center_y + math.sin(angle) * radius
+            self.position_history[i] = (hx, hy)
+
+        # Release after wrap duration
+        if self.wrap_timer <= 0:
+            self._release_wrap()
+
+    def _release_wrap(self):
+        """Release from wrapped state"""
+        self.is_wrapped = False
+        self.wrap_target = None
+        # Jump away from player
+        self.vel_y = -6
+        self.x += self.direction * 30
+        # Reset aggro timer
+        self.aggro_timer = self.aggro_duration // 2
+
+    def _update_position_history(self):
+        """Update position history for drawing segments"""
+        wave_offset = math.sin(self.slither_phase) * 6
+        head_x = self.x + 20
+        head_y = self.y + 30 + wave_offset
+
+        self.position_history.insert(0, (head_x, head_y))
+        if len(self.position_history) > self.history_length:
+            self.position_history = self.position_history[:self.history_length]
+
+    def _get_segment_positions(self):
+        """Get positions for each segment from history with wave motion"""
+        positions = []
+        for i in range(self.num_segments):
+            history_index = i * self.segment_spacing
+            if history_index < len(self.position_history):
+                base_x, base_y = self.position_history[history_index]
+                # Add perpendicular wave motion that travels down the body
+                wave = math.sin(self.slither_phase - i * 0.5) * (4 + i * 0.3)
+                positions.append((base_x + wave * 0.3, base_y))
+            else:
+                # Fallback if history isn't long enough yet
+                positions.append(self.position_history[-1])
+        return positions
+
+    def _get_segment_size(self, index):
+        """Get size of segment - tapers from head to tail"""
+        # Head is largest, tapers toward tail
+        if index == 0:
+            return self.head_size
+        # Body tapers gradually
+        progress = index / (self.num_segments - 1)
+        # Smooth taper: starts wide, gets thinner toward tail
+        size = self.body_width * (1 - progress * 0.7)
+        return max(2, size)
 
     def draw(self, screen):
-        # Draw body segments (back to front)
-        for i, (sx, sy) in enumerate(reversed(self.segments[1:])):
-            segment_size = 10 - i
-            color_val = 80 + i * 15
-            pygame.draw.circle(screen, (color_val, 150 + i * 10, 50),
-                              (int(sx), int(sy)), segment_size)
+        positions = self._get_segment_positions()
 
-        # Head (larger)
-        hx, hy = self.segments[0]
-        pygame.draw.circle(screen, self.color, (int(hx), int(hy)), 14)
+        # Determine colors based on state
+        if self.is_aggroed or self.is_wrapped:
+            # Angry colors - more red/brown
+            body_color = self.aggro_color
+            pattern_color = (80, 50, 30)
+            belly_color = (160, 120, 80)
+            # Pulsing effect when wrapped
+            if self.is_wrapped:
+                pulse = abs(math.sin(self.anim * 0.2))
+                body_color = (
+                    int(self.aggro_color[0] + 60 * pulse),
+                    int(self.aggro_color[1] - 20 * pulse),
+                    int(self.aggro_color[2])
+                )
+        else:
+            body_color = self.color
+            pattern_color = self.pattern_color
+            belly_color = self.belly_color
 
-        # Eyes
-        eye_offset = 5 if self.direction > 0 else -5
-        pygame.draw.circle(screen, (255, 255, 0),
-                          (int(hx + eye_offset - 3), int(hy - 3)), 4)
-        pygame.draw.circle(screen, (255, 255, 0),
-                          (int(hx + eye_offset + 3), int(hy - 3)), 4)
+        # Draw body segments from tail to head (so head draws on top)
+        for i in range(len(positions) - 1, 0, -1):
+            x, y = positions[i]
+            size = self._get_segment_size(i)
 
-        # Slit pupils
-        pygame.draw.line(screen, (0, 0, 0),
-                        (hx + eye_offset - 3, hy - 5),
-                        (hx + eye_offset - 3, hy - 1), 2)
-        pygame.draw.line(screen, (0, 0, 0),
-                        (hx + eye_offset + 3, hy - 5),
-                        (hx + eye_offset + 3, hy - 1), 2)
+            # Alternating pattern colors for scales effect
+            if i % 2 == 0:
+                color = body_color
+            else:
+                color = pattern_color
 
-        # Forked tongue
-        if self.tongue_out:
-            tongue_x = hx + (10 if self.direction > 0 else -10)
-            pygame.draw.line(screen, (200, 50, 50),
-                            (hx + (7 if self.direction > 0 else -7), hy),
-                            (tongue_x, hy), 2)
-            pygame.draw.line(screen, (200, 50, 50),
-                            (tongue_x, hy), (tongue_x + 3, hy - 3), 1)
-            pygame.draw.line(screen, (200, 50, 50),
-                            (tongue_x, hy), (tongue_x + 3, hy + 3), 1)
+            # Draw segment as ellipse for more snake-like shape
+            segment_rect = (int(x - size), int(y - size * 0.6),
+                          int(size * 2), int(size * 1.2))
+            pygame.draw.ellipse(screen, color, segment_rect)
+
+            # Add belly highlight
+            belly_rect = (int(x - size * 0.5), int(y),
+                         int(size), int(size * 0.4))
+            pygame.draw.ellipse(screen, belly_color, belly_rect)
+
+        # Draw head
+        if positions:
+            hx, hy = positions[0]
+            head_w = self.head_size * 2.2
+            head_h = self.head_size * 1.4
+
+            # Head shape - pointed in direction of travel
+            if self.direction > 0:
+                head_rect = (int(hx - self.head_size * 0.8), int(hy - head_h / 2),
+                            int(head_w), int(head_h))
+            else:
+                head_rect = (int(hx - head_w + self.head_size * 0.8), int(hy - head_h / 2),
+                            int(head_w), int(head_h))
+
+            pygame.draw.ellipse(screen, body_color, head_rect)
+
+            # Eyes - positioned based on direction
+            eye_base_x = hx + (4 if self.direction > 0 else -4)
+            eye_y = hy - 2
+
+            # Eye color changes when aggroed - red and angry!
+            if self.is_aggroed or self.is_wrapped:
+                eye_color = (255, 50, 50)  # Red eyes when angry
+            else:
+                eye_color = (200, 200, 50)  # Yellow normally
+
+            # Eye whites
+            pygame.draw.circle(screen, eye_color,
+                              (int(eye_base_x - 2), int(eye_y)), 3)
+            pygame.draw.circle(screen, eye_color,
+                              (int(eye_base_x + 2), int(eye_y)), 3)
+
+            # Slit pupils
+            pupil_x = eye_base_x + (1 if self.direction > 0 else -1)
+            pygame.draw.line(screen, (0, 0, 0),
+                            (pupil_x - 2, eye_y - 2),
+                            (pupil_x - 2, eye_y + 2), 1)
+            pygame.draw.line(screen, (0, 0, 0),
+                            (pupil_x + 2, eye_y - 2),
+                            (pupil_x + 2, eye_y + 2), 1)
+
+            # Forked tongue
+            if self.tongue_out:
+                tongue_base_x = hx + (self.head_size if self.direction > 0 else -self.head_size)
+                tongue_end_x = tongue_base_x + (8 if self.direction > 0 else -8)
+                tongue_mid_x = tongue_base_x + (5 if self.direction > 0 else -5)
+
+                # Main tongue
+                pygame.draw.line(screen, (180, 40, 40),
+                                (int(tongue_base_x), int(hy)),
+                                (int(tongue_mid_x), int(hy)), 2)
+                # Fork
+                pygame.draw.line(screen, (180, 40, 40),
+                                (int(tongue_mid_x), int(hy)),
+                                (int(tongue_end_x), int(hy - 3)), 1)
+                pygame.draw.line(screen, (180, 40, 40),
+                                (int(tongue_mid_x), int(hy)),
+                                (int(tongue_end_x), int(hy + 3)), 1)
 
         # Health bar
-        bar_width = self.width * (self.health / 2)
+        bar_width = self.width * (self.health / 3)
         pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y - 8, self.width, 5))
         pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 8, bar_width, 5))
 
 
 class Shriek(Monster):
     """Territorial bat that roams freely and dive-bombs when agitated"""
-    def __init__(self, x, y, patrol_range, speed, health):
+    def __init__(self, x, y, patrol_range, speed, health, aggro_duration=180):
         super().__init__(x, y, patrol_range, speed, health)
         self.color = (60, 20, 80)
         self.spawn_y = y
@@ -759,7 +1077,7 @@ class Shriek(Monster):
         self.wing_phase = 0
         self.is_agitated = False
         self.agitation_timer = 0
-        self.agitation_duration = 180  # 3 seconds of rage
+        self.agitation_duration = aggro_duration  # frames of rage (60 = 1 second)
         self.roam_angle = 0  # For circular roaming pattern
         self.target_x = x
         self.target_y = y
@@ -940,8 +1258,10 @@ def create_monster(data):
                      data['speed'], data['health'])
     elif monster_type == 'snake':
         return Snake(data['x'], data['y'], data['patrol_range'],
-                    data['speed'], data['health'])
+                    data['speed'], data['health'],
+                    data.get('aggro_duration', 180))
     elif monster_type == 'shriek':
         return Shriek(data['x'], data['y'], data['patrol_range'],
-                     data['speed'], data['health'])
+                     data['speed'], data['health'],
+                     data.get('aggro_duration', 180))
     return None

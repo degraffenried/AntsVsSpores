@@ -57,6 +57,11 @@ class LevelEditor:
         self.filename_input = ""
         self.available_files = []
 
+        # Monster editor state
+        self.show_monster_editor = False
+        self.editing_monster = None
+        self.monster_editor_field = 0  # 0=patrol_range, 1=speed, 2=health
+
         # Track unsaved changes
         self.is_dirty = False
         self.current_filename = None
@@ -106,12 +111,6 @@ class LevelEditor:
         self.selected_element = None
         self.current_filename = None
 
-        # Add default ground
-        self.platforms.append({
-            "x": 0, "y": 750, "width": self.preview_rect.width,
-            "height": 50, "color": [80, 80, 80]
-        })
-
         self._mark_clean()
 
     def snap_to_grid(self, pos):
@@ -127,10 +126,14 @@ class LevelEditor:
         # Handle dialogs first
         if self.show_save_dialog or self.show_load_dialog or self.show_new_dialog:
             return self._handle_dialog_event(event)
+        if self.show_monster_editor:
+            return self._handle_monster_editor_event(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
                 return self._handle_left_click(event.pos)
+            elif event.button == 2:  # Middle click - edit monster
+                self._open_monster_editor(event.pos)
             elif event.button == 3:  # Right click
                 self._delete_at(event.pos)
 
@@ -262,14 +265,18 @@ class LevelEditor:
         elif tool == "delete":
             self._delete_at(pos)
         elif tool in ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]:
-            self.monsters.append({
+            monster_data = {
                 "type": tool,
                 "x": snapped[0],
                 "y": snapped[1],
                 "patrol_range": 80,
                 "speed": 2,
                 "health": 3
-            })
+            }
+            # Snake and Shriek have additional aggro_duration property
+            if tool in ["snake", "shriek"]:
+                monster_data["aggro_duration"] = 180  # 3 seconds default
+            self.monsters.append(monster_data)
             self._mark_dirty()
 
         return None
@@ -321,10 +328,8 @@ class LevelEditor:
                 self._mark_dirty()
                 return
 
-        # Check platforms (except ground)
+        # Check platforms
         for platform in self.platforms[:]:
-            if platform["y"] >= 750:  # Don't delete ground
-                continue
             rect = pygame.Rect(platform["x"], platform["y"],
                               platform["width"], platform["height"])
             if rect.collidepoint(pos):
@@ -335,6 +340,127 @@ class LevelEditor:
     def _drag_element(self, pos):
         """Drag selected element"""
         pass  # Could implement dragging later
+
+    def _find_monster_at(self, pos):
+        """Find monster at given position, return monster dict or None"""
+        for monster in self.monsters:
+            rect = pygame.Rect(monster["x"], monster["y"], 40, 40)
+            if rect.collidepoint(pos):
+                return monster
+        return None
+
+    def _open_monster_editor(self, pos):
+        """Open monster editor for monster at position"""
+        monster = self._find_monster_at(pos)
+        if monster:
+            self.editing_monster = monster
+            self.show_monster_editor = True
+            self.monster_editor_field = 0
+
+    def _get_monster_field_count(self):
+        """Get number of editable fields for current monster"""
+        if self.editing_monster and self.editing_monster.get("type") in ["snake", "shriek"]:
+            return 4  # patrol_range, speed, health, aggro_duration
+        return 3  # patrol_range, speed, health
+
+    def _handle_monster_editor_event(self, event):
+        """Handle events in monster editor dialog"""
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.show_monster_editor = False
+                self.editing_monster = None
+                return None
+
+            if event.key == pygame.K_RETURN:
+                self.show_monster_editor = False
+                self.editing_monster = None
+                return None
+
+            field_count = self._get_monster_field_count()
+
+            # Navigate fields with up/down
+            if event.key == pygame.K_UP:
+                self.monster_editor_field = (self.monster_editor_field - 1) % field_count
+            elif event.key == pygame.K_DOWN or event.key == pygame.K_TAB:
+                self.monster_editor_field = (self.monster_editor_field + 1) % field_count
+
+            # Adjust values with left/right
+            elif event.key == pygame.K_LEFT:
+                self._adjust_monster_field(-1)
+            elif event.key == pygame.K_RIGHT:
+                self._adjust_monster_field(1)
+
+            # Number input for direct value entry
+            elif event.unicode.isdigit():
+                self._set_monster_field_digit(int(event.unicode))
+
+        return None
+
+    def _adjust_monster_field(self, delta):
+        """Adjust the currently selected monster field by delta"""
+        if not self.editing_monster:
+            return
+
+        field_names = ["patrol_range", "speed", "health"]
+        if self.editing_monster.get("type") in ["snake", "shriek"]:
+            field_names.append("aggro_duration")
+
+        if self.monster_editor_field >= len(field_names):
+            return
+
+        field = field_names[self.monster_editor_field]
+
+        # Different increments for different fields
+        if field == "patrol_range":
+            increment = 10 * delta
+            min_val, max_val = 0, 500
+        elif field == "speed":
+            increment = 1 * delta
+            min_val, max_val = 1, 10
+        elif field == "health":
+            increment = 1 * delta
+            min_val, max_val = 1, 50
+        elif field == "aggro_duration":
+            increment = 30 * delta  # 0.5 second increments
+            min_val, max_val = 30, 600  # 0.5 to 10 seconds
+        else:
+            return
+
+        new_val = self.editing_monster.get(field, min_val) + increment
+        self.editing_monster[field] = max(min_val, min(max_val, new_val))
+        self._mark_dirty()
+
+    def _set_monster_field_digit(self, digit):
+        """Set monster field based on digit input"""
+        if not self.editing_monster:
+            return
+
+        field_names = ["patrol_range", "speed", "health"]
+        if self.editing_monster.get("type") in ["snake", "shriek"]:
+            field_names.append("aggro_duration")
+
+        if self.monster_editor_field >= len(field_names):
+            return
+
+        field = field_names[self.monster_editor_field]
+        current = self.editing_monster.get(field, 0)
+
+        # Shift current value and add digit
+        if field == "patrol_range":
+            new_val = (current % 100) * 10 + digit
+            new_val = min(500, new_val)
+        elif field == "aggro_duration":
+            new_val = (current % 100) * 10 + digit
+            new_val = max(30, min(600, new_val))
+        else:
+            new_val = (current % 10) * 10 + digit
+            if field == "speed":
+                new_val = max(1, min(10, new_val))
+            else:  # health
+                new_val = max(1, min(50, new_val))
+
+        self.editing_monster[field] = new_val
+        self._mark_dirty()
 
     def _handle_keydown(self, event):
         """Handle keyboard input"""
@@ -509,6 +635,8 @@ class LevelEditor:
             self._draw_load_dialog()
         elif self.show_new_dialog:
             self._draw_new_dialog()
+        elif self.show_monster_editor:
+            self._draw_monster_editor()
 
     def _draw_tool_panel(self):
         """Draw the tool selection panel"""
@@ -637,9 +765,9 @@ class LevelEditor:
         self.screen.blit(text, (200, bar_y + 10))
 
         # Controls hint
-        hint = "Ctrl+N: New | Ctrl+S: Save | Ctrl+O: Load | Tab: Panel | P: Test | ESC: Exit"
+        hint = "Ctrl+S: Save | Ctrl+O: Load | P: Test | Middle-Click: Edit Monster"
         hint_text = self.small_font.render(hint, True, (120, 120, 140))
-        self.screen.blit(hint_text, (self.screen_width - 480, bar_y + 12))
+        self.screen.blit(hint_text, (self.screen_width - 400, bar_y + 12))
 
     def _draw_save_dialog(self):
         """Draw save file dialog"""
@@ -778,3 +906,89 @@ class LevelEditor:
         pygame.draw.rect(self.screen, (100, 100, 140), (dialog_x + 310, btn_y, 100, 30), 2)
         cancel_text = self.font.render("(C)ancel", True, (255, 255, 255))
         self.screen.blit(cancel_text, (dialog_x + 330, btn_y + 6))
+
+    def _draw_monster_editor(self):
+        """Draw monster editor dialog"""
+        if not self.editing_monster:
+            return
+
+        # Overlay
+        overlay = pygame.Surface((self.screen_width, self.screen_height))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(180)
+        self.screen.blit(overlay, (0, 0))
+
+        # Field definitions - base fields for all monsters
+        fields = [
+            ("Patrol Range", "patrol_range", 0, 500),
+            ("Speed", "speed", 1, 10),
+            ("Health", "health", 1, 50)
+        ]
+
+        # Add aggro_duration field for Snake and Shriek
+        has_aggro = self.editing_monster.get("type") in ["snake", "shriek"]
+        if has_aggro:
+            fields.append(("Aggro Duration", "aggro_duration", 30, 600))
+
+        # Dialog box - taller for monsters with aggro
+        dialog_w = 350
+        dialog_h = 265 if has_aggro else 220
+        dialog_x = (self.screen_width - dialog_w) // 2
+        dialog_y = (self.screen_height - dialog_h) // 2
+
+        pygame.draw.rect(self.screen, (50, 55, 65),
+                        (dialog_x, dialog_y, dialog_w, dialog_h))
+        pygame.draw.rect(self.screen, (100, 150, 200),
+                        (dialog_x, dialog_y, dialog_w, dialog_h), 2)
+
+        # Title with monster type
+        monster_type = self.editing_monster["type"].capitalize()
+        title = self.title_font.render(f"Edit {monster_type}", True, (255, 255, 255))
+        self.screen.blit(title, (dialog_x + 20, dialog_y + 15))
+
+        # Draw fields
+        for i, (label, key, min_val, max_val) in enumerate(fields):
+            y = dialog_y + 60 + i * 45
+            is_selected = (i == self.monster_editor_field)
+
+            # Highlight selected field
+            if is_selected:
+                pygame.draw.rect(self.screen, (70, 75, 85),
+                               (dialog_x + 15, y - 5, dialog_w - 30, 40))
+                pygame.draw.rect(self.screen, (100, 150, 200),
+                               (dialog_x + 15, y - 5, dialog_w - 30, 40), 2)
+
+            # Label - show seconds for aggro_duration
+            display_label = label
+            if key == "aggro_duration":
+                display_label = "Aggro (frames)"
+            label_color = (255, 255, 100) if is_selected else (200, 200, 200)
+            label_text = self.font.render(display_label, True, label_color)
+            self.screen.blit(label_text, (dialog_x + 25, y + 5))
+
+            # Value with arrows
+            value = self.editing_monster.get(key, min_val)
+            # Show seconds equivalent for aggro_duration
+            if key == "aggro_duration":
+                value_str = f"{value} ({value/60:.1f}s)"
+            else:
+                value_str = str(value)
+
+            # Left arrow
+            arrow_color = (150, 150, 150) if is_selected else (80, 80, 80)
+            left_arrow = self.font.render("<", True, arrow_color)
+            self.screen.blit(left_arrow, (dialog_x + 200, y + 5))
+
+            # Value
+            value_text = self.font.render(value_str, True, (255, 255, 255))
+            value_x = dialog_x + 250 - value_text.get_width() // 2
+            self.screen.blit(value_text, (value_x, y + 5))
+
+            # Right arrow
+            right_arrow = self.font.render(">", True, arrow_color)
+            self.screen.blit(right_arrow, (dialog_x + 310, y + 5))
+
+        # Hint - position at bottom of dialog
+        hint = self.small_font.render("UP/DOWN: Select | LEFT/RIGHT: Adjust | ENTER: Done",
+                                      True, (150, 150, 150))
+        self.screen.blit(hint, (dialog_x + 25, dialog_y + dialog_h - 30))
