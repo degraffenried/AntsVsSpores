@@ -29,6 +29,21 @@ class Monster:
     def draw(self, screen):
         pass
 
+    def has_ground_ahead(self, platforms, check_distance=10):
+        """Check if there's ground ahead in the direction the monster is moving.
+        Returns True if safe to continue, False if there's an edge ahead."""
+        # Check a point ahead of the monster and below its feet
+        check_x = self.x + (self.width + check_distance) if self.direction > 0 else self.x - check_distance
+        check_y = self.y + self.height + 5  # Just below the monster's feet
+
+        # Create a small rect to check for platform collision
+        check_rect = pygame.Rect(check_x, check_y, 5, 10)
+
+        for platform in platforms:
+            if check_rect.colliderect(platform.rect):
+                return True
+        return False
+
 
 class Walker(Monster):
     def __init__(self, x, y, patrol_range, speed, health):
@@ -40,6 +55,11 @@ class Walker(Monster):
         self.vel_y += self.gravity
         if self.vel_y > 20:
             self.vel_y = 20
+
+        # Check for edge before moving (only when on ground)
+        on_ground = self.vel_y == 0
+        if on_ground and not self.has_ground_ahead(platforms):
+            self.direction *= -1
 
         # Patrol movement
         self.x += self.speed * self.direction
@@ -147,73 +167,213 @@ class Flyer(Monster):
 
 
 class Spider(Monster):
-    """Crawls on platforms, moves toward player when nearby"""
+    """Crawls on platforms and walls, moves toward player when nearby"""
     def __init__(self, x, y, patrol_range, speed, health):
         super().__init__(x, y, patrol_range, speed, health)
-        self.color = (40, 40, 40)
+        self.color = (25, 25, 30)
         self.leg_anim = 0
+        self.is_climbing = False
+        self.climb_direction = 0  # 1 = climbing up, -1 = climbing down
+        self.wall_side = 0  # -1 = left wall, 1 = right wall
+        self.current_wall = None  # Reference to the wall platform being climbed
 
     def update(self, platforms, player):
-        # Apply gravity
-        self.vel_y += self.gravity
-        if self.vel_y > 20:
-            self.vel_y = 20
+        self.leg_anim += 0.4  # Faster leg animation
 
-        # Track player if within range
-        dist_to_player = abs(player.x - self.x)
-        if dist_to_player < 200:
-            if player.x > self.x:
-                self.direction = 1
-            else:
-                self.direction = -1
-            self.x += self.speed * self.direction * 1.5
+        if self.is_climbing:
+            # Climbing a wall
+            self.vel_y = 0  # No gravity while climbing
+            climb_speed = self.speed * 1.2
+
+            # Move up the wall
+            self.y -= climb_speed
+
+            # Check if we've reached the top of the wall
+            if self.current_wall:
+                wall_top = self.current_wall.rect.top
+                if self.y <= wall_top - self.height:
+                    # Reached top - step onto the platform
+                    self.y = wall_top - self.height
+                    self.is_climbing = False
+                    self.current_wall = None
+                    # Move onto the platform
+                    if self.wall_side == -1:
+                        self.x = self.current_wall.rect.left if self.current_wall else self.x
+                    else:
+                        self.x = self.current_wall.rect.right - self.width if self.current_wall else self.x
+                    self.direction = -self.wall_side  # Face away from wall
         else:
-            # Normal patrol movement
-            self.x += self.speed * self.direction
-            if self.x > self.spawn_x + self.patrol_range:
-                self.direction = -1
-            elif self.x < self.spawn_x - self.patrol_range:
-                self.direction = 1
+            # Normal ground movement
+            # Apply gravity
+            self.vel_y += self.gravity
+            if self.vel_y > 20:
+                self.vel_y = 20
 
-        self.leg_anim += 0.3
+            # Check for edge before moving (only when on ground)
+            on_ground = self.vel_y == 0
+            ground_ahead = self.has_ground_ahead(platforms)
 
-        # Move vertically
-        self.y += self.vel_y
+            # Track player if within range
+            dist_to_player = abs(player.x - self.x)
+            if dist_to_player < 250:  # Increased detection range
+                if player.x > self.x:
+                    self.direction = 1
+                else:
+                    self.direction = -1
+                # Only move toward player if there's ground ahead (or we can climb)
+                if not on_ground or ground_ahead:
+                    self.x += self.speed * self.direction * 1.5
+            else:
+                # Check for edge during patrol
+                if on_ground and not ground_ahead:
+                    self.direction *= -1
+                # Normal patrol movement
+                self.x += self.speed * self.direction
+                if self.x > self.spawn_x + self.patrol_range:
+                    self.direction = -1
+                elif self.x < self.spawn_x - self.patrol_range:
+                    self.direction = 1
 
-        # Check vertical collisions
-        monster_rect = self.get_rect()
-        for platform in platforms:
-            if monster_rect.colliderect(platform.rect):
-                if self.vel_y > 0:
-                    self.y = platform.rect.top - self.height
-                    self.vel_y = 0
+            # Move vertically
+            self.y += self.vel_y
+
+            # Check collisions
+            monster_rect = self.get_rect()
+            for platform in platforms:
+                if monster_rect.colliderect(platform.rect):
+                    # Vertical collision (landing)
+                    if self.vel_y > 0 and self.y + self.height > platform.rect.top:
+                        if self.y < platform.rect.top:
+                            self.y = platform.rect.top - self.height
+                            self.vel_y = 0
+                    # Horizontal collision (hitting a wall) - start climbing!
+                    elif self.vel_y <= 0 or on_ground:
+                        # Check if we hit the side of a platform
+                        if self.direction > 0 and self.x + self.width > platform.rect.left and self.x < platform.rect.left:
+                            # Hit left side of platform - climb it
+                            self.is_climbing = True
+                            self.wall_side = 1
+                            self.current_wall = platform
+                            self.x = platform.rect.left - self.width
+                        elif self.direction < 0 and self.x < platform.rect.right and self.x + self.width > platform.rect.right:
+                            # Hit right side of platform - climb it
+                            self.is_climbing = True
+                            self.wall_side = -1
+                            self.current_wall = platform
+                            self.x = platform.rect.right
 
     def draw(self, screen):
-        # Body - two connected circles
-        pygame.draw.circle(screen, self.color, (int(self.x + 20), int(self.y + 15)), 12)
-        pygame.draw.circle(screen, (50, 50, 50), (int(self.x + 20), int(self.y + 28)), 14)
+        # Body colors - darker, more menacing
+        body_color = self.color
+        abdomen_color = (35, 30, 40)
 
-        # 8 legs with animation
-        leg_move = math.sin(self.leg_anim) * 3
-        for i, (lx, ly) in enumerate([(-8, 12), (-10, 20), (-9, 28), (-6, 34)]):
+        # Abdomen (back) - larger, more bulbous
+        pygame.draw.ellipse(screen, abdomen_color,
+                           (self.x + 5, self.y + 12, 30, 26))
+        # Abdomen markings - red hourglass pattern
+        pygame.draw.polygon(screen, (150, 0, 0), [
+            (self.x + 20, self.y + 18),
+            (self.x + 15, self.y + 25),
+            (self.x + 20, self.y + 28),
+            (self.x + 25, self.y + 25)
+        ])
+
+        # Cephalothorax (front body)
+        pygame.draw.ellipse(screen, body_color,
+                           (self.x + 10, self.y + 5, 20, 16))
+
+        # 8 long, scary jointed legs
+        leg_move = math.sin(self.leg_anim) * 6
+        leg_color = (20, 20, 25)
+        leg_highlight = (45, 40, 50)
+
+        # Leg attachment points on body
+        leg_bases = [
+            (-2, 10), (0, 14), (2, 18), (4, 22),  # Left side
+        ]
+
+        for i, (base_x, base_y) in enumerate(leg_bases):
+            # Alternating leg movement
             offset = leg_move if i % 2 == 0 else -leg_move
-            # Left legs
-            pygame.draw.line(screen, (30, 30, 30),
-                            (self.x + 20 + lx, self.y + ly),
-                            (self.x + 20 + lx - 12, self.y + ly + 8 + offset), 2)
-            # Right legs
-            pygame.draw.line(screen, (30, 30, 30),
-                            (self.x + 20 - lx, self.y + ly),
-                            (self.x + 20 - lx + 12, self.y + ly + 8 + offset), 2)
+            climb_offset = 0
+            if self.is_climbing:
+                # Legs reach toward wall when climbing
+                climb_offset = 5 * self.wall_side
 
-        # Eyes - red dots
-        for i in range(4):
-            pygame.draw.circle(screen, (200, 0, 0), (int(self.x + 12 + i * 4), int(self.y + 8)), 2)
+            # Left legs - 3 segments each
+            lx, ly = self.x + 20 + base_x, self.y + base_y
+
+            # First segment (coxa) - goes up and out
+            mid1_x = lx - 18 + climb_offset
+            mid1_y = ly - 8 + offset * 0.5
+            pygame.draw.line(screen, leg_color, (lx, ly), (mid1_x, mid1_y), 3)
+
+            # Second segment (femur) - goes down and out
+            mid2_x = mid1_x - 12
+            mid2_y = mid1_y + 15 + offset
+            pygame.draw.line(screen, leg_color, (mid1_x, mid1_y), (mid2_x, mid2_y), 2)
+
+            # Third segment (tarsus) - the "foot", touches ground
+            end_x = mid2_x - 5
+            end_y = mid2_y + 10 + offset * 0.3
+            pygame.draw.line(screen, leg_highlight, (mid2_x, mid2_y), (end_x, end_y), 2)
+            # Claw at the end
+            pygame.draw.circle(screen, (60, 50, 70), (int(end_x), int(end_y)), 2)
+
+            # Right legs - mirror of left
+            rx, ry = self.x + 20 - base_x, self.y + base_y
+
+            # First segment
+            rmid1_x = rx + 18 - climb_offset
+            rmid1_y = ry - 8 - offset * 0.5
+            pygame.draw.line(screen, leg_color, (rx, ry), (rmid1_x, rmid1_y), 3)
+
+            # Second segment
+            rmid2_x = rmid1_x + 12
+            rmid2_y = rmid1_y + 15 - offset
+            pygame.draw.line(screen, leg_color, (rmid1_x, rmid1_y), (rmid2_x, rmid2_y), 2)
+
+            # Third segment
+            rend_x = rmid2_x + 5
+            rend_y = rmid2_y + 10 - offset * 0.3
+            pygame.draw.line(screen, leg_highlight, (rmid2_x, rmid2_y), (rend_x, rend_y), 2)
+            # Claw
+            pygame.draw.circle(screen, (60, 50, 70), (int(rend_x), int(rend_y)), 2)
+
+        # Pedipalps (small front appendages)
+        palp_move = math.sin(self.leg_anim * 1.5) * 2
+        pygame.draw.line(screen, leg_color,
+                        (self.x + 15, self.y + 8),
+                        (self.x + 8, self.y + 5 + palp_move), 2)
+        pygame.draw.line(screen, leg_color,
+                        (self.x + 25, self.y + 8),
+                        (self.x + 32, self.y + 5 - palp_move), 2)
+
+        # Chelicerae (fangs)
+        fang_extend = abs(math.sin(self.leg_anim * 0.5)) * 3
+        pygame.draw.line(screen, (80, 0, 0),
+                        (self.x + 17, self.y + 12),
+                        (self.x + 14, self.y + 18 + fang_extend), 3)
+        pygame.draw.line(screen, (80, 0, 0),
+                        (self.x + 23, self.y + 12),
+                        (self.x + 26, self.y + 18 + fang_extend), 3)
+
+        # Multiple eyes - 8 eyes in two rows
+        eye_color = (180, 0, 0)
+        eye_glow = (255, 50, 50)
+        # Front row - 4 larger eyes
+        for i, ex in enumerate([-4, -1, 2, 5]):
+            size = 3 if i in [1, 2] else 2  # Middle eyes larger
+            pygame.draw.circle(screen, eye_glow, (int(self.x + 20 + ex), int(self.y + 8)), size)
+            pygame.draw.circle(screen, eye_color, (int(self.x + 20 + ex), int(self.y + 8)), size - 1)
+        # Back row - 4 smaller eyes
+        for ex in [-3, 0, 3, 6]:
+            pygame.draw.circle(screen, eye_color, (int(self.x + 19 + ex), int(self.y + 5)), 1)
 
         # Health bar
         bar_width = self.width * (self.health / 3)
-        pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y - 8, self.width, 5))
-        pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 8, bar_width, 5))
+        pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y - 12, self.width, 5))
+        pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 12, bar_width, 5))
 
 
 class Blob(Monster):
@@ -237,6 +397,10 @@ class Blob(Monster):
 
         # Wobble animation
         self.wobble += 0.15
+
+        # Check for edge before moving (check when descending)
+        if self.vel_y > 0 and not self.has_ground_ahead(platforms):
+            self.direction *= -1
 
         # Patrol movement with bouncing
         self.x += self.speed * self.direction
@@ -285,7 +449,7 @@ class Blob(Monster):
         pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 8, bar_width, 5))
 
 
-class Woodlouse(Monster):
+class Taterbug(Monster):
     """Armored bug that curls into invulnerable ball when shot"""
     def __init__(self, x, y, patrol_range, speed, health):
         super().__init__(x, y, patrol_range, speed, health)
@@ -309,6 +473,11 @@ class Woodlouse(Monster):
         self.vel_y += self.gravity
         if self.vel_y > 20:
             self.vel_y = 20
+
+        # Check for edge before moving (only when on ground)
+        on_ground = self.vel_y == 0
+        if on_ground and not self.has_ground_ahead(platforms):
+            self.direction *= -1
 
         # Handle roll state
         if self.is_rolled:
@@ -394,6 +563,10 @@ class Chompy(Monster):
 
         self.anim += 1
 
+        # Check for edge before moving (only when on ground)
+        on_ground = self.vel_y == 0
+        ground_ahead = self.has_ground_ahead(platforms)
+
         # Check if player is in line of sight (same Y level, within range)
         y_diff = abs(player.y - self.y)
         x_diff = abs(player.x - self.x)
@@ -404,9 +577,14 @@ class Chompy(Monster):
                 self.direction = 1
             else:
                 self.direction = -1
-            self.x += self.charge_speed * self.direction
+            # Only charge if there's ground ahead
+            if not on_ground or ground_ahead:
+                self.x += self.charge_speed * self.direction
         else:
             self.is_charging = False
+            # Check for edge during patrol
+            if on_ground and not ground_ahead:
+                self.direction *= -1
             # Normal patrol
             self.x += self.speed * self.direction
             if self.x > self.spawn_x + self.patrol_range:
@@ -488,6 +666,11 @@ class Snake(Monster):
         self.anim += 1
         self.tongue_out = (self.anim % 60) < 20
 
+        # Check for edge before moving (only when on ground)
+        on_ground = self.vel_y == 0
+        if on_ground and not self.has_ground_ahead(platforms):
+            self.direction *= -1
+
         # Slithering movement with wave
         wave = math.sin(self.anim * 0.15) * 2
         self.x += (self.speed + wave) * self.direction
@@ -566,6 +749,175 @@ class Snake(Monster):
         pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 8, bar_width, 5))
 
 
+class Shriek(Monster):
+    """Territorial bat that roams freely and dive-bombs when agitated"""
+    def __init__(self, x, y, patrol_range, speed, health):
+        super().__init__(x, y, patrol_range, speed, health)
+        self.color = (60, 20, 80)
+        self.spawn_y = y
+        self.anim = 0
+        self.wing_phase = 0
+        self.is_agitated = False
+        self.agitation_timer = 0
+        self.agitation_duration = 180  # 3 seconds of rage
+        self.roam_angle = 0  # For circular roaming pattern
+        self.target_x = x
+        self.target_y = y
+        self.screech_cooldown = 0
+
+    def take_damage(self, damage):
+        self.health -= damage
+        # Getting hit makes it ANGRY
+        self.is_agitated = True
+        self.agitation_timer = self.agitation_duration
+        return self.health <= 0
+
+    def update(self, platforms, player):
+        self.anim += 1
+        self.wing_phase += 0.4
+
+        # Check if player gets too close - triggers agitation
+        dist_to_player = math.sqrt((player.x - self.x) ** 2 + (player.y - self.y) ** 2)
+        if dist_to_player < 150:
+            self.is_agitated = True
+            self.agitation_timer = self.agitation_duration
+
+        if self.is_agitated:
+            self.agitation_timer -= 1
+            if self.agitation_timer <= 0:
+                self.is_agitated = False
+
+            # Dive toward player aggressively
+            dx = player.x - self.x
+            dy = player.y - self.y
+            dist = max(1, math.sqrt(dx * dx + dy * dy))
+            chase_speed = self.speed * 2.5
+            self.x += (dx / dist) * chase_speed
+            self.y += (dy / dist) * chase_speed
+
+            # Update direction for drawing
+            self.direction = 1 if dx > 0 else -1
+
+            # Screech effect (visual cue)
+            if self.screech_cooldown <= 0:
+                self.screech_cooldown = 60
+            else:
+                self.screech_cooldown -= 1
+        else:
+            # Peaceful roaming in a figure-8 pattern around spawn point
+            self.roam_angle += 0.02
+            roam_radius_x = self.patrol_range
+            roam_radius_y = self.patrol_range * 0.5
+
+            self.target_x = self.spawn_x + math.sin(self.roam_angle) * roam_radius_x
+            self.target_y = self.spawn_y + math.sin(self.roam_angle * 2) * roam_radius_y
+
+            # Smoothly move toward target
+            dx = self.target_x - self.x
+            dy = self.target_y - self.y
+            self.x += dx * 0.05
+            self.y += dy * 0.05
+
+            # Update direction for drawing
+            if abs(dx) > 0.5:
+                self.direction = 1 if dx > 0 else -1
+
+    def draw(self, screen):
+        # Wing flapping speed increases when agitated
+        flap_speed = 2.0 if self.is_agitated else 1.0
+        wing_offset = math.sin(self.wing_phase * flap_speed) * 12
+
+        # Body color pulses red when agitated
+        if self.is_agitated:
+            pulse = abs(math.sin(self.anim * 0.3))
+            body_color = (60 + int(140 * pulse), 20, 80)
+        else:
+            body_color = self.color
+
+        # Furry body (oval)
+        pygame.draw.ellipse(screen, body_color,
+                           (self.x + 8, self.y + 12, 24, 20))
+
+        # Head
+        pygame.draw.circle(screen, body_color,
+                          (int(self.x + 20), int(self.y + 10)), 10)
+
+        # Ears (pointed)
+        ear_offset = 8 * self.direction
+        pygame.draw.polygon(screen, body_color, [
+            (self.x + 12, self.y + 5),
+            (self.x + 8, self.y - 8),
+            (self.x + 18, self.y + 3)
+        ])
+        pygame.draw.polygon(screen, body_color, [
+            (self.x + 28, self.y + 5),
+            (self.x + 32, self.y - 8),
+            (self.x + 22, self.y + 3)
+        ])
+
+        # Wings - membrane style
+        wing_color = (80, 40, 100) if not self.is_agitated else (150, 40, 60)
+
+        # Left wing
+        pygame.draw.polygon(screen, wing_color, [
+            (self.x + 10, self.y + 15),
+            (self.x - 15, self.y + 5 - wing_offset),
+            (self.x - 20, self.y + 15 - wing_offset * 0.5),
+            (self.x - 10, self.y + 25),
+            (self.x + 5, self.y + 22)
+        ])
+        # Wing bones
+        pygame.draw.line(screen, body_color,
+                        (self.x + 10, self.y + 15),
+                        (self.x - 15, self.y + 5 - wing_offset), 2)
+        pygame.draw.line(screen, body_color,
+                        (self.x + 10, self.y + 18),
+                        (self.x - 18, self.y + 15 - wing_offset * 0.5), 2)
+
+        # Right wing
+        pygame.draw.polygon(screen, wing_color, [
+            (self.x + 30, self.y + 15),
+            (self.x + 55, self.y + 5 - wing_offset),
+            (self.x + 60, self.y + 15 - wing_offset * 0.5),
+            (self.x + 50, self.y + 25),
+            (self.x + 35, self.y + 22)
+        ])
+        # Wing bones
+        pygame.draw.line(screen, body_color,
+                        (self.x + 30, self.y + 15),
+                        (self.x + 55, self.y + 5 - wing_offset), 2)
+        pygame.draw.line(screen, body_color,
+                        (self.x + 30, self.y + 18),
+                        (self.x + 58, self.y + 15 - wing_offset * 0.5), 2)
+
+        # Eyes - glow red when angry
+        eye_color = (255, 50, 50) if self.is_agitated else (200, 150, 50)
+        pygame.draw.circle(screen, eye_color,
+                          (int(self.x + 16), int(self.y + 8)), 3)
+        pygame.draw.circle(screen, eye_color,
+                          (int(self.x + 24), int(self.y + 8)), 3)
+
+        # Fangs
+        pygame.draw.line(screen, (255, 255, 255),
+                        (self.x + 17, self.y + 16), (self.x + 17, self.y + 20), 2)
+        pygame.draw.line(screen, (255, 255, 255),
+                        (self.x + 23, self.y + 16), (self.x + 23, self.y + 20), 2)
+
+        # Screech effect when agitated
+        if self.is_agitated and self.screech_cooldown > 50:
+            for i in range(3):
+                radius = 15 + i * 8
+                alpha = 150 - i * 40
+                pygame.draw.circle(screen, (255, 100, 100),
+                                  (int(self.x + 20), int(self.y + 12)),
+                                  radius, 1)
+
+        # Health bar
+        bar_width = self.width * (self.health / 2)
+        pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y - 12, self.width, 5))
+        pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y - 12, bar_width, 5))
+
+
 def create_monster(data):
     monster_type = data.get('type', 'walker')
     if monster_type == 'walker':
@@ -580,8 +932,8 @@ def create_monster(data):
     elif monster_type == 'blob':
         return Blob(data['x'], data['y'], data['patrol_range'],
                    data['speed'], data['health'])
-    elif monster_type == 'woodlouse':
-        return Woodlouse(data['x'], data['y'], data['patrol_range'],
+    elif monster_type == 'taterbug':
+        return Taterbug(data['x'], data['y'], data['patrol_range'],
                         data['speed'], data['health'])
     elif monster_type == 'chompy':
         return Chompy(data['x'], data['y'], data['patrol_range'],
@@ -589,4 +941,7 @@ def create_monster(data):
     elif monster_type == 'snake':
         return Snake(data['x'], data['y'], data['patrol_range'],
                     data['speed'], data['health'])
+    elif monster_type == 'shriek':
+        return Shriek(data['x'], data['y'], data['patrol_range'],
+                     data['speed'], data['health'])
     return None

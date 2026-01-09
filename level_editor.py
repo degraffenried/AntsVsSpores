@@ -13,7 +13,7 @@ class LevelEditor:
         self.tools = [
             "platform", "spawn", "portal",
             "walker", "flyer", "spider", "blob",
-            "woodlouse", "chompy", "snake", "delete"
+            "taterbug", "chompy", "snake", "shriek", "delete"
         ]
         self.selected_tool = 0
 
@@ -39,24 +39,63 @@ class LevelEditor:
         self.platform_height = 20
 
         # UI layout
-        self.tool_panel_width = 130
+        self.tool_panel_width = 150
+        self.tool_panel_collapsed = False
+        self.collapsed_panel_width = 30
         self.status_bar_height = 40
-        self.preview_rect = pygame.Rect(0, 0, self.screen_width - self.tool_panel_width,
-                                         self.screen_height - self.status_bar_height)
+        self._update_preview_rect()
 
         # Fonts
         self.font = pygame.font.Font(None, 24)
         self.title_font = pygame.font.Font(None, 32)
+        self.small_font = pygame.font.Font(None, 20)
 
         # File browser state
         self.show_save_dialog = False
         self.show_load_dialog = False
+        self.show_new_dialog = False
         self.filename_input = ""
         self.available_files = []
+
+        # Track unsaved changes
+        self.is_dirty = False
+        self.current_filename = None
+        self._last_saved_state = None
 
         # Ensure custom_levels directory exists
         if not os.path.exists("custom_levels"):
             os.makedirs("custom_levels")
+
+    def _update_preview_rect(self):
+        """Update preview rectangle based on panel state"""
+        panel_width = self.collapsed_panel_width if self.tool_panel_collapsed else self.tool_panel_width
+        self.preview_rect = pygame.Rect(0, 0, self.screen_width - panel_width,
+                                         self.screen_height - self.status_bar_height)
+
+    def update_screen(self, screen):
+        """Update screen reference after resize"""
+        self.screen = screen
+        self.screen_width = screen.get_width()
+        self.screen_height = screen.get_height()
+        self._update_preview_rect()
+
+    def _get_state_snapshot(self):
+        """Get a snapshot of current state for dirty checking"""
+        import copy
+        return {
+            "platforms": copy.deepcopy(self.platforms),
+            "monsters": copy.deepcopy(self.monsters),
+            "spawn_point": copy.deepcopy(self.spawn_point)
+        }
+
+    def _mark_dirty(self):
+        """Mark the level as having unsaved changes"""
+        self.is_dirty = True
+
+    def _mark_clean(self):
+        """Mark the level as saved"""
+        self.is_dirty = False
+        self._last_saved_state = self._get_state_snapshot()
 
     def reset(self):
         """Reset editor to blank level"""
@@ -65,12 +104,15 @@ class LevelEditor:
         self.spawn_point = {"x": 100, "y": 650}
         self.background_color = [30, 35, 45]
         self.selected_element = None
+        self.current_filename = None
 
         # Add default ground
         self.platforms.append({
-            "x": 0, "y": 750, "width": self.screen_width - self.tool_panel_width,
+            "x": 0, "y": 750, "width": self.preview_rect.width,
             "height": 50, "color": [80, 80, 80]
         })
+
+        self._mark_clean()
 
     def snap_to_grid(self, pos):
         """Snap position to grid if enabled"""
@@ -83,7 +125,7 @@ class LevelEditor:
     def handle_event(self, event):
         """Handle input events, return action string or None"""
         # Handle dialogs first
-        if self.show_save_dialog or self.show_load_dialog:
+        if self.show_save_dialog or self.show_load_dialog or self.show_new_dialog:
             return self._handle_dialog_event(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -112,11 +154,12 @@ class LevelEditor:
         return None
 
     def _handle_dialog_event(self, event):
-        """Handle events in save/load dialogs"""
+        """Handle events in save/load/new dialogs"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.show_save_dialog = False
                 self.show_load_dialog = False
+                self.show_new_dialog = False
                 self.filename_input = ""
                 return None
 
@@ -126,6 +169,13 @@ class LevelEditor:
                         self.save_level(self.filename_input)
                         self.show_save_dialog = False
                         self.filename_input = ""
+                        # Check if there's a pending action after save
+                        after_action = getattr(self, '_after_save_action', None)
+                        self._after_save_action = None
+                        if after_action == 'menu':
+                            return "menu"
+                        elif after_action == 'new':
+                            self.reset()
                 elif event.key == pygame.K_BACKSPACE:
                     self.filename_input = self.filename_input[:-1]
                 elif event.unicode.isalnum() or event.unicode in "_-":
@@ -149,14 +199,50 @@ class LevelEditor:
                     else:
                         self.selected_element = (self.selected_element + 1) % len(self.available_files)
 
+            elif self.show_new_dialog:
+                if event.key == pygame.K_y:
+                    # Save first
+                    self.show_new_dialog = False
+                    self.show_save_dialog = True
+                    self.filename_input = self.current_filename or ""
+                    self._after_save_action = getattr(self, '_pending_action', 'new')
+                elif event.key == pygame.K_n:
+                    # Discard changes
+                    self.show_new_dialog = False
+                    pending = getattr(self, '_pending_action', 'new')
+                    self._pending_action = None
+                    if pending == 'menu':
+                        return "menu"
+                    else:
+                        self.reset()
+                elif event.key == pygame.K_c:
+                    # Cancel
+                    self.show_new_dialog = False
+                    self._pending_action = None
+
         return None
 
     def _handle_left_click(self, pos):
         """Handle left mouse click"""
-        # Check if clicking tool panel
-        if pos[0] > self.preview_rect.right:
-            self._select_tool(pos)
-            return None
+        # Check if clicking the collapse/expand button
+        panel_x = self.preview_rect.right
+        if self.tool_panel_collapsed:
+            # Check if clicking expand button
+            if panel_x <= pos[0] <= panel_x + self.collapsed_panel_width:
+                if 5 <= pos[1] <= 35:
+                    self.tool_panel_collapsed = False
+                    self._update_preview_rect()
+                    return None
+        else:
+            # Check if clicking collapse button (top right of panel)
+            if panel_x <= pos[0] <= panel_x + 25 and 5 <= pos[1] <= 25:
+                self.tool_panel_collapsed = True
+                self._update_preview_rect()
+                return None
+            # Check if clicking tool panel
+            if pos[0] > panel_x:
+                self._select_tool(pos)
+                return None
 
         # Check if in preview area
         if not self.preview_rect.collidepoint(pos):
@@ -170,11 +256,12 @@ class LevelEditor:
             self.platform_start = snapped
         elif tool == "spawn":
             self.spawn_point = {"x": snapped[0], "y": snapped[1]}
+            self._mark_dirty()
         elif tool == "portal":
             pass  # Portal is always at top center
         elif tool == "delete":
             self._delete_at(pos)
-        elif tool in ["walker", "flyer", "spider", "blob", "woodlouse", "chompy", "snake"]:
+        elif tool in ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]:
             self.monsters.append({
                 "type": tool,
                 "x": snapped[0],
@@ -183,6 +270,7 @@ class LevelEditor:
                 "speed": 2,
                 "health": 3
             })
+            self._mark_dirty()
 
         return None
 
@@ -208,6 +296,7 @@ class LevelEditor:
                 "x": x, "y": y, "width": width, "height": height,
                 "color": [100, 80, 60]
             })
+            self._mark_dirty()
 
         self.creating_platform = False
         self.platform_start = None
@@ -215,10 +304,10 @@ class LevelEditor:
     def _select_tool(self, pos):
         """Select a tool from the panel"""
         panel_x = self.preview_rect.right
-        relative_y = pos[1] - 60
+        relative_y = pos[1] - 45  # Match the y offset in _draw_tool_buttons
 
         if relative_y >= 0:
-            tool_index = relative_y // 35
+            tool_index = relative_y // 32  # Match the spacing in _draw_tool_buttons
             if 0 <= tool_index < len(self.tools):
                 self.selected_tool = tool_index
 
@@ -229,6 +318,7 @@ class LevelEditor:
             rect = pygame.Rect(monster["x"], monster["y"], 40, 40)
             if rect.collidepoint(pos):
                 self.monsters.remove(monster)
+                self._mark_dirty()
                 return
 
         # Check platforms (except ground)
@@ -239,6 +329,7 @@ class LevelEditor:
                               platform["width"], platform["height"])
             if rect.collidepoint(pos):
                 self.platforms.remove(platform)
+                self._mark_dirty()
                 return
 
     def _drag_element(self, pos):
@@ -250,14 +341,27 @@ class LevelEditor:
         mods = pygame.key.get_mods()
 
         if event.key == pygame.K_ESCAPE:
+            # Check for unsaved changes before exiting
+            if self.is_dirty:
+                self.show_new_dialog = True
+                self._pending_action = "menu"
+                return None
             return "menu"
         elif event.key == pygame.K_g:
             self.grid_snap = not self.grid_snap
+        elif event.key == pygame.K_TAB:
+            # Toggle tool panel
+            self.tool_panel_collapsed = not self.tool_panel_collapsed
+            self._update_preview_rect()
         elif event.key == pygame.K_n and mods & pygame.KMOD_CTRL:
-            self.reset()
+            # New level - check for unsaved changes
+            if self.is_dirty:
+                self.show_new_dialog = True
+            else:
+                self.reset()
         elif event.key == pygame.K_s and mods & pygame.KMOD_CTRL:
             self.show_save_dialog = True
-            self.filename_input = ""
+            self.filename_input = self.current_filename or ""
         elif event.key == pygame.K_o and mods & pygame.KMOD_CTRL:
             self.show_load_dialog = True
             self.selected_element = 0
@@ -268,6 +372,10 @@ class LevelEditor:
             tool_index = event.key - pygame.K_1
             if tool_index < len(self.tools):
                 self.selected_tool = tool_index
+        elif event.key == pygame.K_0:
+            # 0 selects 10th tool
+            if 9 < len(self.tools):
+                self.selected_tool = 9
 
         return None
 
@@ -283,7 +391,7 @@ class LevelEditor:
         """Save current level to file"""
         level_data = {
             "name": filename,
-            "width": self.screen_width - self.tool_panel_width,
+            "width": self.preview_rect.width,
             "height": self.screen_height,
             "background_color": self.background_color,
             "player_spawn": self.spawn_point,
@@ -294,6 +402,9 @@ class LevelEditor:
         filepath = f"custom_levels/{filename}.json"
         with open(filepath, 'w') as f:
             json.dump(level_data, f, indent=4)
+
+        self.current_filename = filename
+        self._mark_clean()
 
     def load_level(self, filename):
         """Load level from file"""
@@ -306,6 +417,8 @@ class LevelEditor:
             self.monsters = data.get("monsters", [])
             self.spawn_point = data.get("player_spawn", {"x": 100, "y": 650})
             self.background_color = data.get("background_color", [30, 35, 45])
+            self.current_filename = filename
+            self._mark_clean()
 
     def get_level_data(self):
         """Get current level as playable data"""
@@ -371,9 +484,10 @@ class LevelEditor:
             "flyer": (150, 50, 200),
             "spider": (40, 40, 40),
             "blob": (100, 200, 100),
-            "woodlouse": (80, 80, 90),
+            "taterbug": (80, 80, 90),
             "chompy": (200, 80, 80),
-            "snake": (100, 180, 60)
+            "snake": (100, 180, 60),
+            "shriek": (60, 20, 80)
         }
         for m in self.monsters:
             color = monster_colors.get(m["type"], (200, 50, 50))
@@ -393,10 +507,40 @@ class LevelEditor:
             self._draw_save_dialog()
         elif self.show_load_dialog:
             self._draw_load_dialog()
+        elif self.show_new_dialog:
+            self._draw_new_dialog()
 
     def _draw_tool_panel(self):
         """Draw the tool selection panel"""
         panel_x = self.preview_rect.right
+
+        if self.tool_panel_collapsed:
+            # Draw collapsed panel with expand button
+            panel_width = self.collapsed_panel_width
+            pygame.draw.rect(self.screen, (40, 45, 55),
+                            (panel_x, 0, panel_width, self.screen_height))
+            pygame.draw.line(self.screen, (80, 85, 95),
+                            (panel_x, 0), (panel_x, self.screen_height), 2)
+
+            # Expand button (arrow pointing left)
+            btn_rect = pygame.Rect(panel_x + 3, 5, 24, 24)
+            pygame.draw.rect(self.screen, (60, 65, 75), btn_rect)
+            pygame.draw.rect(self.screen, (100, 105, 115), btn_rect, 1)
+            # Draw arrow <<
+            arrow_text = self.font.render("<<", True, (200, 200, 220))
+            self.screen.blit(arrow_text, (panel_x + 5, 8))
+
+            # Show current tool indicator vertically
+            tool_colors = self._get_tool_colors()
+            for i, tool in enumerate(self.tools):
+                y = 40 + i * 25
+                color = tool_colors.get(tool, (100, 100, 100))
+                if i == self.selected_tool:
+                    pygame.draw.rect(self.screen, (255, 255, 100),
+                                   (panel_x + 5, y, 20, 20), 2)
+                pygame.draw.rect(self.screen, color, (panel_x + 7, y + 2, 16, 16))
+            return
+
         panel_width = self.tool_panel_width
 
         # Panel background
@@ -405,12 +549,23 @@ class LevelEditor:
         pygame.draw.line(self.screen, (80, 85, 95),
                         (panel_x, 0), (panel_x, self.screen_height), 2)
 
+        # Collapse button (arrow pointing right)
+        btn_rect = pygame.Rect(panel_x + 3, 5, 20, 20)
+        pygame.draw.rect(self.screen, (60, 65, 75), btn_rect)
+        pygame.draw.rect(self.screen, (100, 105, 115), btn_rect, 1)
+        arrow_text = self.small_font.render(">>", True, (200, 200, 220))
+        self.screen.blit(arrow_text, (panel_x + 5, 7))
+
         # Title
         title = self.title_font.render("TOOLS", True, (200, 200, 220))
-        self.screen.blit(title, (panel_x + 35, 20))
+        self.screen.blit(title, (panel_x + 35, 15))
 
         # Tool buttons
-        tool_colors = {
+        self._draw_tool_buttons(panel_x, panel_width)
+
+    def _get_tool_colors(self):
+        """Get color mapping for tools"""
+        return {
             "platform": (100, 80, 60),
             "spawn": (50, 150, 255),
             "portal": (100, 200, 255),
@@ -418,29 +573,42 @@ class LevelEditor:
             "flyer": (150, 50, 200),
             "spider": (40, 40, 40),
             "blob": (100, 200, 100),
-            "woodlouse": (80, 80, 90),
+            "taterbug": (80, 80, 90),
             "chompy": (200, 80, 80),
             "snake": (100, 180, 60),
+            "shriek": (60, 20, 80),
             "delete": (200, 50, 50)
         }
 
+    def _draw_tool_buttons(self, panel_x, panel_width):
+        """Draw tool buttons in expanded panel"""
+        tool_colors = self._get_tool_colors()
+
         for i, tool in enumerate(self.tools):
-            y = 60 + i * 35
+            y = 45 + i * 32
             color = tool_colors.get(tool, (100, 100, 100))
 
             # Highlight selected
             if i == self.selected_tool:
                 pygame.draw.rect(self.screen, (80, 85, 95),
-                               (panel_x + 5, y - 2, panel_width - 10, 30))
+                               (panel_x + 5, y - 2, panel_width - 10, 28))
                 pygame.draw.rect(self.screen, (255, 255, 100),
-                               (panel_x + 5, y - 2, panel_width - 10, 30), 2)
+                               (panel_x + 5, y - 2, panel_width - 10, 28), 2)
 
             # Tool color indicator
-            pygame.draw.rect(self.screen, color, (panel_x + 10, y + 3, 20, 20))
+            pygame.draw.rect(self.screen, color, (panel_x + 10, y + 2, 18, 18))
 
             # Tool name
-            text = self.font.render(tool.capitalize(), True, (200, 200, 200))
-            self.screen.blit(text, (panel_x + 35, y + 5))
+            text = self.small_font.render(tool.capitalize(), True, (200, 200, 200))
+            self.screen.blit(text, (panel_x + 33, y + 4))
+
+            # Keyboard shortcut hint
+            if i < 9:
+                key_hint = self.small_font.render(str(i + 1), True, (100, 100, 120))
+                self.screen.blit(key_hint, (panel_x + panel_width - 20, y + 4))
+            elif i == 9:
+                key_hint = self.small_font.render("0", True, (100, 100, 120))
+                self.screen.blit(key_hint, (panel_x + panel_width - 20, y + 4))
 
     def _draw_status_bar(self):
         """Draw the status bar"""
@@ -451,16 +619,27 @@ class LevelEditor:
         pygame.draw.line(self.screen, (80, 85, 95),
                         (0, bar_y), (self.screen_width, bar_y), 2)
 
+        # File name and dirty indicator
+        filename_display = self.current_filename or "Untitled"
+        if self.is_dirty:
+            filename_display += " *"
+            dirty_color = (255, 200, 100)
+        else:
+            dirty_color = (180, 180, 200)
+
+        file_text = self.font.render(filename_display, True, dirty_color)
+        self.screen.blit(file_text, (10, bar_y + 10))
+
         # Status text
         grid_status = "ON" if self.grid_snap else "OFF"
         status = f"Grid: {grid_status} | Platforms: {len(self.platforms)} | Monsters: {len(self.monsters)}"
         text = self.font.render(status, True, (180, 180, 200))
-        self.screen.blit(text, (10, bar_y + 10))
+        self.screen.blit(text, (200, bar_y + 10))
 
         # Controls hint
-        hint = "Ctrl+S: Save | Ctrl+O: Load | P: Test | G: Grid | ESC: Menu"
-        hint_text = self.font.render(hint, True, (120, 120, 140))
-        self.screen.blit(hint_text, (self.screen_width - 450, bar_y + 10))
+        hint = "Ctrl+N: New | Ctrl+S: Save | Ctrl+O: Load | Tab: Panel | P: Test | ESC: Exit"
+        hint_text = self.small_font.render(hint, True, (120, 120, 140))
+        self.screen.blit(hint_text, (self.screen_width - 480, bar_y + 12))
 
     def _draw_save_dialog(self):
         """Draw save file dialog"""
@@ -542,3 +721,60 @@ class LevelEditor:
         hint = self.font.render("UP/DOWN: Select | ENTER: Load | ESC: Cancel",
                                True, (150, 150, 150))
         self.screen.blit(hint, (dialog_x + 55, dialog_y + 270))
+
+    def _draw_new_dialog(self):
+        """Draw unsaved changes confirmation dialog"""
+        # Overlay
+        overlay = pygame.Surface((self.screen_width, self.screen_height))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(180)
+        self.screen.blit(overlay, (0, 0))
+
+        # Dialog box
+        dialog_w, dialog_h = 450, 180
+        dialog_x = (self.screen_width - dialog_w) // 2
+        dialog_y = (self.screen_height - dialog_h) // 2
+
+        pygame.draw.rect(self.screen, (50, 55, 65),
+                        (dialog_x, dialog_y, dialog_w, dialog_h))
+        pygame.draw.rect(self.screen, (255, 200, 100),
+                        (dialog_x, dialog_y, dialog_w, dialog_h), 2)
+
+        # Warning icon area
+        pygame.draw.rect(self.screen, (80, 60, 30),
+                        (dialog_x, dialog_y, 60, dialog_h))
+
+        # Warning symbol
+        warning_text = self.title_font.render("!", True, (255, 200, 100))
+        self.screen.blit(warning_text, (dialog_x + 23, dialog_y + 70))
+
+        # Title
+        title = self.title_font.render("Unsaved Changes", True, (255, 200, 100))
+        self.screen.blit(title, (dialog_x + 80, dialog_y + 20))
+
+        # Message
+        msg1 = self.font.render("You have unsaved changes.", True, (200, 200, 200))
+        msg2 = self.font.render("Do you want to save before continuing?", True, (200, 200, 200))
+        self.screen.blit(msg1, (dialog_x + 80, dialog_y + 60))
+        self.screen.blit(msg2, (dialog_x + 80, dialog_y + 85))
+
+        # Buttons
+        btn_y = dialog_y + 130
+
+        # Yes button
+        pygame.draw.rect(self.screen, (60, 120, 60), (dialog_x + 80, btn_y, 100, 30))
+        pygame.draw.rect(self.screen, (100, 180, 100), (dialog_x + 80, btn_y, 100, 30), 2)
+        yes_text = self.font.render("(Y)es Save", True, (255, 255, 255))
+        self.screen.blit(yes_text, (dialog_x + 90, btn_y + 6))
+
+        # No button
+        pygame.draw.rect(self.screen, (120, 60, 60), (dialog_x + 195, btn_y, 100, 30))
+        pygame.draw.rect(self.screen, (180, 100, 100), (dialog_x + 195, btn_y, 100, 30), 2)
+        no_text = self.font.render("(N)o Discard", True, (255, 255, 255))
+        self.screen.blit(no_text, (dialog_x + 200, btn_y + 6))
+
+        # Cancel button
+        pygame.draw.rect(self.screen, (60, 60, 80), (dialog_x + 310, btn_y, 100, 30))
+        pygame.draw.rect(self.screen, (100, 100, 140), (dialog_x + 310, btn_y, 100, 30), 2)
+        cancel_text = self.font.render("(C)ancel", True, (255, 255, 255))
+        self.screen.blit(cancel_text, (dialog_x + 330, btn_y + 6))

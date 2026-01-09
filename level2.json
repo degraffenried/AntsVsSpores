@@ -178,7 +178,7 @@
             "health": 2
         },
         {
-            "type": "woodlouse",
+            "type": "taterbug",
             "x": 850,
             "y": 300,
             "patrol_range": 60,

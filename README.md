@@ -7,7 +7,7 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 - **7 Story Levels** - Progress through increasingly difficult platforming challenges
 - **Endless Mode** - Procedurally generated levels with scaling difficulty (unlocks after beating the game)
 - **Level Editor** - Create and save your own custom levels (unlocks after beating the game)
-- **7 Monster Types** - Walker, Flyer, Spider, Blob, Woodlouse, Chompy, and Snake
+- **8 Monster Types** - Walker, Flyer, Spider, Blob, Taterbug, Chompy, Snake, and Shriek
 - **Shop System** - Spend collected spores on upgrades like extra lives and life bundles
 - **Procedural 8-bit Audio** - Retro sound effects and music generated in real-time
 - **Save System** - Progress is saved automatically
@@ -80,9 +80,10 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
   - **Flyer** - Hovers and moves through the air
   - **Spider** - Tracks toward the player when nearby
   - **Blob** - Bounces around erratically
-  - **Woodlouse** - Curls into an invulnerable ball when shot
+  - **Taterbug** - Curls into an invulnerable ball when shot
   - **Chompy** - Charges at the player when in line of sight
   - **Snake** - Slithers with a multi-segment body
+  - **Shriek** - Territorial bat that dive-bombs when agitated
 
 ## Project Structure
 

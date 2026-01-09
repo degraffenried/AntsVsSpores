@@ -11,7 +11,7 @@ from spore import Spore
 from portal import Portal
 from shop_item import ShopItem
 from game_platform import Platform
-from monsters import Monster, Walker, Flyer, Spider, Blob, Woodlouse, Chompy, Snake, create_monster
+from monsters import Monster, Walker, Flyer, Spider, Blob, Taterbug, Chompy, Snake, create_monster
 from sound_generator import SoundGenerator
 from music_generator import MusicGenerator
 from save_manager import SaveManager
@@ -84,6 +84,8 @@ def main():
     # Set up display
     screen_width = 1200
     screen_height = 800
+    editor_width = 1400
+    editor_height = 900
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Platform Shooter")
 
@@ -94,7 +96,7 @@ def main():
     save_manager = SaveManager()
     main_menu = MainMenu(screen, save_manager)
     endless_gen = EndlessLevelGenerator()
-    level_editor = LevelEditor(screen)
+    level_editor = None  # Created when entering editor mode
 
     # Game mode: "menu", "game", "endless", "editor"
     game_mode = "menu"
@@ -263,6 +265,10 @@ def main():
                         start_game(endless=True)
                     elif result == "Level Editor":
                         game_mode = "editor"
+                        # Resize window for editor
+                        screen = pygame.display.set_mode((editor_width, editor_height))
+                        pygame.display.set_caption("Level Editor - Ants vs Spores")
+                        level_editor = LevelEditor(screen)
                         level_editor.reset()
                         music_gen.stop()
                     elif result == "Quit":
@@ -283,9 +289,16 @@ def main():
                     result = level_editor.handle_event(event)
                     if result == "menu":
                         game_mode = "menu"
+                        # Restore normal window size
+                        screen = pygame.display.set_mode((screen_width, screen_height))
+                        pygame.display.set_caption("Platform Shooter")
+                        main_menu = MainMenu(screen, save_manager)
                     elif result == "test_play":
                         # Test play the custom level
                         game_mode = "test"
+                        # Resize to game size for testing
+                        screen = pygame.display.set_mode((screen_width, screen_height))
+                        pygame.display.set_caption("Test Play - Press ESC to return")
                         test_data = level_editor.get_level_data()
                         player = Player(test_data['player_spawn']['x'], test_data['player_spawn']['y'])
                         platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
@@ -321,6 +334,10 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     if game_mode == "test":
                         game_mode = "editor"
+                        # Resize back to editor size
+                        screen = pygame.display.set_mode((editor_width, editor_height))
+                        pygame.display.set_caption("Level Editor - Ants vs Spores")
+                        level_editor.update_screen(screen)
                         music_gen.stop()
                         continue
                     else:
@@ -331,6 +348,10 @@ def main():
                     if game_mode == "test":
                         # Return to editor
                         game_mode = "editor"
+                        # Resize back to editor size
+                        screen = pygame.display.set_mode((editor_width, editor_height))
+                        pygame.display.set_caption("Level Editor - Ants vs Spores")
+                        level_editor.update_screen(screen)
                         music_gen.stop()
                         continue
                     elif is_endless_mode:

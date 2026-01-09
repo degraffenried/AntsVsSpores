@@ -139,7 +139,7 @@ class EndlessLevelGenerator:
         monsters = []
 
         # Available monster types (unlock more as difficulty increases)
-        all_types = ["walker", "flyer", "spider", "blob", "woodlouse", "chompy", "snake"]
+        all_types = ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]
 
         # Determine available types based on difficulty
         available_count = min(len(all_types), 2 + int(self.difficulty))

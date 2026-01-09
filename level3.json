@@ -33,7 +33,7 @@
     "monsters": [
         {"type": "spider", "x": 350, "y": 700, "patrol_range": 60, "speed": 3, "health": 3},
         {"type": "chompy", "x": 600, "y": 700, "patrol_range": 60, "speed": 4, "health": 3},
-        {"type": "woodlouse", "x": 850, "y": 700, "patrol_range": 60, "speed": 3, "health": 4},
+        {"type": "taterbug", "x": 850, "y": 700, "patrol_range": 60, "speed": 3, "health": 4},
         {"type": "flyer", "x": 200, "y": 500, "patrol_range": 100, "speed": 3, "health": 2},
         {"type": "blob", "x": 500, "y": 400, "patrol_range": 80, "speed": 2, "health": 4},
         {"type": "flyer", "x": 800, "y": 450, "patrol_range": 100, "speed": 3, "health": 3},
@@ -41,6 +41,6 @@
         {"type": "spider", "x": 300, "y": 300, "patrol_range": 60, "speed": 4, "health": 2},
         {"type": "chompy", "x": 900, "y": 350, "patrol_range": 50, "speed": 3, "health": 3},
         {"type": "blob", "x": 400, "y": 100, "patrol_range": 60, "speed": 2, "health": 4},
-        {"type": "woodlouse", "x": 800, "y": 130, "patrol_range": 60, "speed": 2, "health": 3}
+        {"type": "taterbug", "x": 800, "y": 130, "patrol_range": 60, "speed": 2, "health": 3}
     ]
 }
