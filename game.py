@@ -1,3 +1,5 @@
+#!/Users/jared/Documents/AntsVsSpores/venv/bin/python
+
 import pygame
 import json
 import sys
@@ -8,7 +10,7 @@ from bullet import Bullet
 from spore import Spore
 from portal import Portal
 from shop_item import ShopItem
-from platform import Platform
+from game_platform import Platform
 from monsters import Monster, Walker, Flyer, Spider, Blob, Woodlouse, Chompy, Snake, create_monster
 from sound_generator import SoundGenerator
 from music_generator import MusicGenerator
