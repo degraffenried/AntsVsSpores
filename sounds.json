@@ -1,0 +1,119 @@
+{
+    "jump": {
+        "type": "sweep",
+        "start_freq": 200,
+        "end_freq": 600,
+        "duration": 0.1,
+        "volume": 0.3,
+        "waveform": "square"
+    },
+    "double_jump": {
+        "type": "sweep",
+        "start_freq": 400,
+        "end_freq": 900,
+        "duration": 0.12,
+        "volume": 0.3,
+        "waveform": "square"
+    },
+    "shoot": {
+        "type": "noise_decay",
+        "freq": 800,
+        "duration": 0.08,
+        "volume": 0.2,
+        "waveform": "square"
+    },
+    "enemy_hit": {
+        "type": "sweep",
+        "start_freq": 400,
+        "end_freq": 100,
+        "duration": 0.15,
+        "volume": 0.4,
+        "waveform": "square"
+    },
+    "enemy_death": {
+        "type": "explosion",
+        "start_freq": 300,
+        "end_freq": 50,
+        "duration": 0.3,
+        "volume": 0.4,
+        "waveform": "noise"
+    },
+    "player_hit": {
+        "type": "sweep",
+        "start_freq": 600,
+        "end_freq": 200,
+        "duration": 0.2,
+        "volume": 0.35,
+        "waveform": "sawtooth"
+    },
+    "game_over": {
+        "type": "descending",
+        "notes": [400, 350, 300, 200],
+        "note_duration": 0.2,
+        "volume": 0.4,
+        "waveform": "square"
+    },
+    "spore_spawn": {
+        "type": "descending",
+        "notes": [600, 800, 1000, 1200],
+        "note_duration": 0.1,
+        "volume": 0.4,
+        "waveform": "square"
+    },
+    "spore_collect": {
+        "type": "descending",
+        "notes": [400, 500, 600, 800, 1000],
+        "note_duration": 0.08,
+        "volume": 0.5,
+        "waveform": "square"
+    },
+    "level_complete": {
+        "type": "descending",
+        "notes": [523, 659, 784, 1047],
+        "note_duration": 0.15,
+        "volume": 0.5,
+        "waveform": "square"
+    },
+    "shop_buy": {
+        "type": "descending",
+        "notes": [800, 1000, 1200],
+        "note_duration": 0.1,
+        "volume": 0.4,
+        "waveform": "square"
+    },
+    "shop_error": {
+        "type": "descending",
+        "notes": [200, 150],
+        "note_duration": 0.15,
+        "volume": 0.3,
+        "waveform": "square"
+    },
+    "extra_life": {
+        "type": "descending",
+        "notes": [600, 700, 800, 900, 1000, 1200],
+        "note_duration": 0.08,
+        "volume": 0.5,
+        "waveform": "square"
+    },
+    "player_death": {
+        "type": "descending",
+        "notes": [500, 400, 300, 200, 150],
+        "note_duration": 0.12,
+        "volume": 0.4,
+        "waveform": "sawtooth"
+    },
+    "shoot_rapid": {
+        "type": "noise_decay",
+        "freq": 1000,
+        "duration": 0.05,
+        "volume": 0.15,
+        "waveform": "square"
+    },
+    "shoot_spread": {
+        "type": "noise_decay",
+        "freq": 600,
+        "duration": 0.1,
+        "volume": 0.25,
+        "waveform": "square"
+    }
+}

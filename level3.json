@@ -1,0 +1,45 @@
+{
+    "name": "Level 3 - The Caverns",
+    "width": 1200,
+    "height": 800,
+    "background_color": [25, 30, 40],
+    "player_spawn": {
+        "x": 50,
+        "y": 700
+    },
+    "platforms": [
+        {"x": 0, "y": 750, "width": 200, "height": 50, "color": [70, 70, 90]},
+        {"x": 300, "y": 750, "width": 150, "height": 50, "color": [70, 70, 90]},
+        {"x": 550, "y": 750, "width": 150, "height": 50, "color": [70, 70, 90]},
+        {"x": 800, "y": 750, "width": 150, "height": 50, "color": [70, 70, 90]},
+        {"x": 1050, "y": 750, "width": 150, "height": 50, "color": [70, 70, 90]},
+        {"x": 100, "y": 620, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 280, "y": 550, "width": 120, "height": 20, "color": [90, 80, 70]},
+        {"x": 480, "y": 480, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 680, "y": 550, "width": 120, "height": 20, "color": [90, 80, 70]},
+        {"x": 880, "y": 620, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 1050, "y": 520, "width": 120, "height": 20, "color": [90, 80, 70]},
+        {"x": 50, "y": 400, "width": 150, "height": 20, "color": [90, 80, 70]},
+        {"x": 280, "y": 350, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 450, "y": 300, "width": 150, "height": 20, "color": [90, 80, 70]},
+        {"x": 680, "y": 350, "width": 120, "height": 20, "color": [90, 80, 70]},
+        {"x": 900, "y": 400, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 150, "y": 200, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 350, "y": 150, "width": 120, "height": 20, "color": [90, 80, 70]},
+        {"x": 550, "y": 120, "width": 100, "height": 20, "color": [90, 80, 70]},
+        {"x": 750, "y": 180, "width": 150, "height": 20, "color": [90, 80, 70]},
+        {"x": 1000, "y": 250, "width": 150, "height": 20, "color": [90, 80, 70]}
+    ],
+    "monsters": [
+        {"type": "walker", "x": 350, "y": 700, "patrol_range": 60, "speed": 3, "health": 3},
+        {"type": "walker", "x": 600, "y": 700, "patrol_range": 60, "speed": 4, "health": 3},
+        {"type": "walker", "x": 850, "y": 700, "patrol_range": 60, "speed": 3, "health": 4},
+        {"type": "flyer", "x": 200, "y": 500, "patrol_range": 100, "speed": 3, "health": 2},
+        {"type": "flyer", "x": 500, "y": 400, "patrol_range": 120, "speed": 4, "health": 2},
+        {"type": "flyer", "x": 800, "y": 450, "patrol_range": 100, "speed": 3, "health": 3},
+        {"type": "walker", "x": 500, "y": 250, "patrol_range": 50, "speed": 3, "health": 4},
+        {"type": "flyer", "x": 300, "y": 250, "patrol_range": 80, "speed": 4, "health": 2},
+        {"type": "flyer", "x": 900, "y": 300, "patrol_range": 100, "speed": 4, "health": 3},
+        {"type": "walker", "x": 600, "y": 70, "patrol_range": 40, "speed": 3, "health": 5}
+    ]
+}

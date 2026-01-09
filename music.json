@@ -1,0 +1,253 @@
+{
+    "tracks": {
+        "main_theme": {
+            "name": "Adventure",
+            "tempo": 140,
+            "loop": true,
+            "channels": [
+                {
+                    "name": "melody",
+                    "waveform": "square",
+                    "volume": 0.3,
+                    "notes": [
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.5},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "A5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.5},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "C6", "duration": 0.5},
+                        {"note": "B5", "duration": 0.25},
+                        {"note": "A5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.5},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.5},
+                        {"note": "REST", "duration": 0.25},
+                        {"note": "G4", "duration": 0.25},
+                        {"note": "A4", "duration": 0.25},
+                        {"note": "B4", "duration": 0.25},
+                        {"note": "C5", "duration": 0.5},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.5}
+                    ]
+                },
+                {
+                    "name": "bass",
+                    "waveform": "triangle",
+                    "volume": 0.25,
+                    "notes": [
+                        {"note": "C3", "duration": 0.5},
+                        {"note": "C3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5},
+                        {"note": "A3", "duration": 0.5},
+                        {"note": "A3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5},
+                        {"note": "F3", "duration": 0.5},
+                        {"note": "F3", "duration": 0.5},
+                        {"note": "E3", "duration": 0.5},
+                        {"note": "E3", "duration": 0.5},
+                        {"note": "D3", "duration": 0.5},
+                        {"note": "D3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5},
+                        {"note": "G3", "duration": 0.5}
+                    ]
+                },
+                {
+                    "name": "arpeggio",
+                    "waveform": "square",
+                    "volume": 0.15,
+                    "notes": [
+                        {"note": "C4", "duration": 0.125},
+                        {"note": "E4", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "E4", "duration": 0.125},
+                        {"note": "C4", "duration": 0.125},
+                        {"note": "E4", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "E4", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "D5", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "D5", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "A4", "duration": 0.125},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "E5", "duration": 0.125},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "A4", "duration": 0.125},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "E5", "duration": 0.125},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "D5", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "G4", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125},
+                        {"note": "D5", "duration": 0.125},
+                        {"note": "B4", "duration": 0.125}
+                    ]
+                }
+            ]
+        },
+        "shop_theme": {
+            "name": "Peaceful Shop",
+            "tempo": 100,
+            "loop": true,
+            "channels": [
+                {
+                    "name": "melody",
+                    "waveform": "triangle",
+                    "volume": 0.25,
+                    "notes": [
+                        {"note": "E5", "duration": 0.5},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.5},
+                        {"note": "E5", "duration": 0.5},
+                        {"note": "G5", "duration": 0.5},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.5},
+                        {"note": "REST", "duration": 0.5},
+                        {"note": "G4", "duration": 0.5},
+                        {"note": "A4", "duration": 0.5},
+                        {"note": "C5", "duration": 0.5},
+                        {"note": "D5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "D5", "duration": 0.5},
+                        {"note": "C5", "duration": 1.0}
+                    ]
+                },
+                {
+                    "name": "harmony",
+                    "waveform": "sine",
+                    "volume": 0.15,
+                    "notes": [
+                        {"note": "C4", "duration": 1.0},
+                        {"note": "G4", "duration": 1.0},
+                        {"note": "A4", "duration": 1.0},
+                        {"note": "E4", "duration": 1.0},
+                        {"note": "F4", "duration": 1.0},
+                        {"note": "G4", "duration": 1.0},
+                        {"note": "C4", "duration": 2.0}
+                    ]
+                }
+            ]
+        },
+        "intense_theme": {
+            "name": "Battle",
+            "tempo": 160,
+            "loop": true,
+            "channels": [
+                {
+                    "name": "melody",
+                    "waveform": "square",
+                    "volume": 0.3,
+                    "notes": [
+                        {"note": "E5", "duration": 0.125},
+                        {"note": "E5", "duration": 0.125},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "E5", "duration": 0.125},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "REST", "duration": 0.25},
+                        {"note": "G4", "duration": 0.25},
+                        {"note": "REST", "duration": 0.25},
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "G4", "duration": 0.25},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "E4", "duration": 0.25},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "A4", "duration": 0.25},
+                        {"note": "B4", "duration": 0.25},
+                        {"note": "Bb4", "duration": 0.125},
+                        {"note": "A4", "duration": 0.25},
+                        {"note": "G4", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "A5", "duration": 0.25},
+                        {"note": "F5", "duration": 0.125},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "REST", "duration": 0.125},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "C5", "duration": 0.125},
+                        {"note": "D5", "duration": 0.125},
+                        {"note": "B4", "duration": 0.25}
+                    ]
+                },
+                {
+                    "name": "bass",
+                    "waveform": "square",
+                    "volume": 0.25,
+                    "notes": [
+                        {"note": "C2", "duration": 0.25},
+                        {"note": "C3", "duration": 0.25},
+                        {"note": "C2", "duration": 0.25},
+                        {"note": "C3", "duration": 0.25},
+                        {"note": "G2", "duration": 0.25},
+                        {"note": "G3", "duration": 0.25},
+                        {"note": "G2", "duration": 0.25},
+                        {"note": "G3", "duration": 0.25},
+                        {"note": "A2", "duration": 0.25},
+                        {"note": "A3", "duration": 0.25},
+                        {"note": "E2", "duration": 0.25},
+                        {"note": "E3", "duration": 0.25},
+                        {"note": "F2", "duration": 0.25},
+                        {"note": "F3", "duration": 0.25},
+                        {"note": "G2", "duration": 0.25},
+                        {"note": "G3", "duration": 0.25}
+                    ]
+                }
+            ]
+        },
+        "victory_theme": {
+            "name": "Victory",
+            "tempo": 120,
+            "loop": false,
+            "channels": [
+                {
+                    "name": "melody",
+                    "waveform": "square",
+                    "volume": 0.35,
+                    "notes": [
+                        {"note": "C5", "duration": 0.25},
+                        {"note": "E5", "duration": 0.25},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "C6", "duration": 0.5},
+                        {"note": "G5", "duration": 0.25},
+                        {"note": "C6", "duration": 1.0}
+                    ]
+                }
+            ]
+        }
+    },
+    "note_frequencies": {
+        "C2": 65.41, "D2": 73.42, "E2": 82.41, "F2": 87.31, "G2": 98.00, "A2": 110.00, "Bb2": 116.54, "B2": 123.47,
+        "C3": 130.81, "D3": 146.83, "E3": 164.81, "F3": 174.61, "G3": 196.00, "A3": 220.00, "Bb3": 233.08, "B3": 246.94,
+        "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "A4": 440.00, "Bb4": 466.16, "B4": 493.88,
+        "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "Bb5": 932.33, "B5": 987.77,
+        "C6": 1046.50, "D6": 1174.66, "E6": 1318.51, "F6": 1396.91, "G6": 1567.98, "A6": 1760.00, "B6": 1975.53,
+        "REST": 0
+    }
+}
