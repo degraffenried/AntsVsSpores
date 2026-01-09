@@ -23,10 +23,10 @@
     "monsters": [],
     "shop_items": [
         {
-            "name": "Extra Life",
-            "type": "life",
-            "cost": 2,
-            "description": "+1 Life",
+            "name": "Life Bundle",
+            "type": "life_bundle",
+            "cost": 3,
+            "description": "+3 Lives",
             "x": 300,
             "y": 550
         },

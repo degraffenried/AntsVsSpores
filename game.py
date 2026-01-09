@@ -9,9 +9,13 @@ from spore import Spore
 from portal import Portal
 from shop_item import ShopItem
 from platform import Platform
-from monsters import Monster, Walker, Flyer, create_monster
+from monsters import Monster, Walker, Flyer, Spider, Blob, Woodlouse, Chompy, Snake, create_monster
 from sound_generator import SoundGenerator
 from music_generator import MusicGenerator
+from save_manager import SaveManager
+from menu import MainMenu, PauseMenu
+from endless_mode import EndlessLevelGenerator
+from level_editor import LevelEditor
 
 # Initialize pygame
 pygame.init()
@@ -43,7 +47,7 @@ def draw_ui(screen, player, font, score):
     screen.blit(score_text, (10, 40))
 
     # Controls hint
-    controls = font.render("WASD: Move | SPACE: Jump | Click: Shoot", True, (150, 150, 150))
+    controls = font.render("WASD: Move | SPACE: Jump | RShift: Shoot", True, (150, 150, 150))
     screen.blit(controls, (10, 770))
 
 
@@ -55,11 +59,11 @@ def game_over_screen(screen, font, score):
 
     game_over_text = font.render("GAME OVER", True, (255, 0, 0))
     score_text = font.render(f"Final Score: {score}", True, (255, 255, 255))
-    restart_text = font.render("Press R to Restart or ESC to Quit", True, (200, 200, 200))
+    restart_text = font.render("Press R to Restart | M for Menu | ESC to Quit", True, (200, 200, 200))
 
     screen.blit(game_over_text, (500, 300))
     screen.blit(score_text, (520, 380))
-    screen.blit(restart_text, (420, 460))
+    screen.blit(restart_text, (350, 460))
 
 
 def main():
@@ -83,6 +87,15 @@ def main():
 
     clock = pygame.time.Clock()
     font = pygame.font.Font(None, 36)
+
+    # Initialize save manager and menu
+    save_manager = SaveManager()
+    main_menu = MainMenu(screen, save_manager)
+    endless_gen = EndlessLevelGenerator()
+    level_editor = LevelEditor(screen)
+
+    # Game mode: "menu", "game", "endless", "editor"
+    game_mode = "menu"
 
     # Persistent game state
     class GameState:
@@ -160,63 +173,181 @@ def main():
         level_data = load_level(game_state.current_level)
         return level_data
 
-    # Initialize first level
-    level_data = init_level()
-    player = level_data['player']
-    platforms = level_data['platforms']
-    monsters = level_data['monsters']
-    bullets = level_data['bullets']
-    portal = level_data['portal']
-    spore = level_data['spore']
-    bg_color = level_data['bg_color']
-    has_spore = level_data['has_spore']
-    spore_spawned = level_data['spore_spawned']
-    is_shop = level_data['is_shop']
-    shop_items = level_data['shop_items']
-
-    # Start playing music
-    music_gen.play('main_theme')
-    current_music = 'main_theme'
+    # Game variables (will be initialized when starting a game)
+    level_data = None
+    player = None
+    platforms = []
+    monsters = []
+    bullets = []
+    portal = None
+    spore = None
+    bg_color = (30, 35, 45)
+    has_spore = False
+    spore_spawned = False
+    is_shop = False
+    shop_items = []
 
     running = True
     game_over = False
     victory = False
     respawn_timer = 0
+    is_endless_mode = False
+    endless_level = 0
 
+    def start_game(endless=False):
+        nonlocal level_data, player, platforms, monsters, bullets, portal
+        nonlocal spore, bg_color, has_spore, spore_spawned, is_shop, shop_items
+        nonlocal game_over, victory, respawn_timer, is_endless_mode, endless_level, current_music
+
+        game_state.reset()
+        is_endless_mode = endless
+        endless_level = 0
+        game_over = False
+        victory = False
+        respawn_timer = 0
+
+        if endless:
+            endless_gen.reset()
+            map_data = endless_gen.generate_level()
+            endless_level = 1
+        else:
+            level_data = init_level()
+            map_data = None
+
+        if endless:
+            player = Player(map_data['player_spawn']['x'], map_data['player_spawn']['y'])
+            platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+                        for p in map_data['platforms']]
+            monsters = [create_monster(m) for m in map_data['monsters']]
+            monsters = [m for m in monsters if m is not None]
+            bullets = []
+            portal = Portal(screen_width // 2 - 40, 10)
+            spore = None
+            bg_color = tuple(map_data['background_color'])
+            has_spore = False
+            spore_spawned = False
+            is_shop = False
+            shop_items = []
+        else:
+            player = level_data['player']
+            platforms = level_data['platforms']
+            monsters = level_data['monsters']
+            bullets = level_data['bullets']
+            portal = level_data['portal']
+            spore = level_data['spore']
+            bg_color = level_data['bg_color']
+            has_spore = level_data['has_spore']
+            spore_spawned = level_data['spore_spawned']
+            is_shop = level_data['is_shop']
+            shop_items = level_data['shop_items']
+
+        music_gen.play('main_theme')
+        current_music = 'main_theme'
+
+    # Main application loop
     while running:
+        # MENU MODE
+        if game_mode == "menu":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                else:
+                    result = main_menu.handle_event(event)
+                    if result == "Start Game":
+                        game_mode = "game"
+                        start_game(endless=False)
+                    elif result == "Endless Mode":
+                        game_mode = "endless"
+                        start_game(endless=True)
+                    elif result == "Level Editor":
+                        game_mode = "editor"
+                        level_editor.reset()
+                        music_gen.stop()
+                    elif result == "Quit":
+                        running = False
+
+            # Draw menu
+            main_menu.draw()
+            pygame.display.flip()
+            clock.tick(60)
+            continue
+
+        # EDITOR MODE
+        if game_mode == "editor":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                else:
+                    result = level_editor.handle_event(event)
+                    if result == "menu":
+                        game_mode = "menu"
+                    elif result == "test_play":
+                        # Test play the custom level
+                        game_mode = "test"
+                        test_data = level_editor.get_level_data()
+                        player = Player(test_data['player_spawn']['x'], test_data['player_spawn']['y'])
+                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+                                    for p in test_data['platforms']]
+                        monsters = [create_monster(m) for m in test_data['monsters']]
+                        monsters = [m for m in monsters if m is not None]
+                        bullets = []
+                        portal = Portal(screen_width // 2 - 40, 10)
+                        spore = None
+                        bg_color = tuple(test_data['background_color'])
+                        has_spore = False
+                        spore_spawned = False
+                        is_shop = False
+                        shop_items = []
+                        game_over = False
+                        victory = False
+                        respawn_timer = 0
+                        game_state.reset()
+                        music_gen.play('main_theme')
+                        current_music = 'main_theme'
+
+            if game_mode == "editor":
+                level_editor.draw()
+                pygame.display.flip()
+                clock.tick(60)
+                continue
+
+        # GAME/ENDLESS/TEST MODE - Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and not game_over and not victory and respawn_timer <= 0:
-                    player.shoot(bullets, sound_gen)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    running = False
+                    if game_mode == "test":
+                        game_mode = "editor"
+                        music_gen.stop()
+                        continue
+                    else:
+                        game_mode = "menu"
+                        music_gen.stop()
+                        continue
                 if (game_over or victory) and event.key == pygame.K_r:
-                    # Full restart
-                    game_state.reset()
-                    level_data = init_level()
-                    player = level_data['player']
-                    platforms = level_data['platforms']
-                    monsters = level_data['monsters']
-                    bullets = level_data['bullets']
-                    portal = level_data['portal']
-                    spore = level_data['spore']
-                    bg_color = level_data['bg_color']
-                    has_spore = level_data['has_spore']
-                    spore_spawned = level_data['spore_spawned']
-                    is_shop = level_data['is_shop']
-                    shop_items = level_data['shop_items']
-                    game_over = False
-                    victory = False
-                    respawn_timer = 0
-                    # Restart music
-                    music_gen.play('main_theme')
-                    current_music = 'main_theme'
+                    if game_mode == "test":
+                        # Return to editor
+                        game_mode = "editor"
+                        music_gen.stop()
+                        continue
+                    elif is_endless_mode:
+                        # Restart endless mode
+                        start_game(endless=True)
+                    else:
+                        # Full restart normal game
+                        start_game(endless=False)
+                if (game_over or victory) and event.key == pygame.K_m:
+                    # Return to menu
+                    game_mode = "menu"
+                    music_gen.stop()
+                    continue
                 if not game_over and not victory and respawn_timer <= 0:
                     if event.key == pygame.K_SPACE or event.key == pygame.K_w:
                         player.jump(sound_gen)
+                    # Shoot with Right Shift
+                    if event.key == pygame.K_RSHIFT:
+                        player.shoot(bullets, sound_gen)
                     # Shop purchase
                     if event.key == pygame.K_e and is_shop:
                         for item in shop_items:
@@ -228,6 +359,9 @@ def main():
 
                                     if item.item_type == 'life':
                                         game_state.lives += 1
+                                        sound_gen.play("extra_life")
+                                    elif item.item_type == 'life_bundle':
+                                        game_state.lives += 3
                                         sound_gen.play("extra_life")
                                     elif item.item_type == 'weapon_rapid':
                                         game_state.has_rapid = True
@@ -318,7 +452,9 @@ def main():
                     if player.get_rect().colliderect(spore.get_rect()):
                         spore.collected = True
                         has_spore = True
-                        game_state.spore_count += 1
+                        # Spore reward scales with level (level 1 = 1 spore, etc.)
+                        spore_reward = game_state.current_level + 1
+                        game_state.spore_count += spore_reward
                         portal.activate()
                         sound_gen.play("spore_collect")
 
@@ -343,9 +479,9 @@ def main():
                 if portal.active and player.get_rect().colliderect(portal.get_rect()):
                     sound_gen.play("level_complete")
 
-                    # Grant 2 extra lives for completing a level (not shop)
-                    if not is_shop:
-                        game_state.lives += 2
+                    # Grant 1 extra life for completing a level (not shop, not test mode)
+                    if not is_shop and game_mode != "test":
+                        game_state.lives += 1
                         sound_gen.play("extra_life")
 
                     # Save weapon state
@@ -357,33 +493,76 @@ def main():
                     game_state.has_rapid = player.has_rapid
                     game_state.has_spread = player.has_spread
 
-                    game_state.current_level += 1
-                    level_data = load_level(game_state.current_level, player_state)
-
-                    if level_data is None:
+                    # Handle test mode - just victory
+                    if game_mode == "test":
                         victory = True
                         music_gen.play('victory_theme', loop=False)
                         current_music = 'victory_theme'
-                    else:
-                        player = level_data['player']
-                        platforms = level_data['platforms']
-                        monsters = level_data['monsters']
-                        bullets = level_data['bullets']
-                        portal = level_data['portal']
-                        spore = level_data['spore']
-                        bg_color = level_data['bg_color']
-                        has_spore = level_data['has_spore']
-                        spore_spawned = level_data['spore_spawned']
-                        is_shop = level_data['is_shop']
-                        shop_items = level_data['shop_items']
+                    # Handle endless mode - generate next level
+                    elif is_endless_mode:
+                        endless_level += 1
+                        # Spores scale with endless level
+                        game_state.spore_count += endless_level
+                        # Life bonus every 3 levels
+                        if endless_level % 3 == 0:
+                            game_state.lives += 1
+                            sound_gen.play("extra_life")
 
-                        # Switch music based on level type
-                        if is_shop and current_music != 'shop_theme':
-                            music_gen.play('shop_theme')
-                            current_music = 'shop_theme'
-                        elif not is_shop and current_music != 'main_theme':
-                            music_gen.play('main_theme')
-                            current_music = 'main_theme'
+                        map_data = endless_gen.generate_level()
+                        player = Player(map_data['player_spawn']['x'], map_data['player_spawn']['y'])
+                        player.has_rapid = player_state['has_rapid']
+                        player.has_spread = player_state['has_spread']
+                        player.weapon = player_state['weapon']
+                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+                                    for p in map_data['platforms']]
+                        monsters = [create_monster(m) for m in map_data['monsters']]
+                        monsters = [m for m in monsters if m is not None]
+                        bullets = []
+                        portal = Portal(screen_width // 2 - 40, 10)
+                        spore = None
+                        bg_color = tuple(map_data['background_color'])
+                        has_spore = False
+                        spore_spawned = False
+                        is_shop = False
+                        shop_items = []
+
+                        # Update endless stats
+                        save_manager.update_endless_stats(endless_level, game_state.total_score)
+                        save_manager.save()
+                    else:
+                        # Normal game mode
+                        game_state.current_level += 1
+                        level_data = load_level(game_state.current_level, player_state)
+
+                        if level_data is None:
+                            victory = True
+                            # Save progress - game beaten!
+                            save_manager.mark_game_beaten()
+                            save_manager.update_statistics(score=game_state.total_score,
+                                                          spores=game_state.spore_count)
+                            save_manager.save()
+                            music_gen.play('victory_theme', loop=False)
+                            current_music = 'victory_theme'
+                        else:
+                            player = level_data['player']
+                            platforms = level_data['platforms']
+                            monsters = level_data['monsters']
+                            bullets = level_data['bullets']
+                            portal = level_data['portal']
+                            spore = level_data['spore']
+                            bg_color = level_data['bg_color']
+                            has_spore = level_data['has_spore']
+                            spore_spawned = level_data['spore_spawned']
+                            is_shop = level_data['is_shop']
+                            shop_items = level_data['shop_items']
+
+                            # Switch music based on level type
+                            if is_shop and current_music != 'shop_theme':
+                                music_gen.play('shop_theme')
+                                current_music = 'shop_theme'
+                            elif not is_shop and current_music != 'main_theme':
+                                music_gen.play('main_theme')
+                                current_music = 'main_theme'
 
                 # Check player death
                 if player.health <= 0 and respawn_timer <= 0:
@@ -398,8 +577,13 @@ def main():
                     else:
                         # Respawn at level start
                         respawn_timer = 120  # 2 seconds
-                        player.x = level_data['map_data']['player_spawn']['x']
-                        player.y = level_data['map_data']['player_spawn']['y']
+                        if is_endless_mode or game_mode == "test":
+                            # Use stored spawn point for endless/test mode
+                            player.x = 100
+                            player.y = 650
+                        else:
+                            player.x = level_data['map_data']['player_spawn']['x']
+                            player.y = level_data['map_data']['player_spawn']['y']
                         player.vel_x = 0
                         player.vel_y = 0
 
@@ -444,7 +628,14 @@ def main():
         screen.blit(spore_count_text, (345, 40))
 
         # Draw level indicator
-        level_name = "SHOP" if is_shop else f"Level {game_state.current_level + 1}"
+        if is_endless_mode:
+            level_name = f"Endless {endless_level}"
+        elif game_mode == "test":
+            level_name = "TEST"
+        elif is_shop:
+            level_name = "SHOP"
+        else:
+            level_name = f"Level {game_state.current_level + 1}"
         level_text = font.render(level_name, True, (255, 255, 255))
         screen.blit(level_text, (screen_width - 120, 10))
 
@@ -486,17 +677,29 @@ def main():
             overlay.set_alpha(180)
             screen.blit(overlay, (0, 0))
 
-            victory_text = font.render("VICTORY!", True, (100, 255, 100))
+            if game_mode == "test":
+                victory_text = font.render("LEVEL COMPLETE!", True, (100, 255, 100))
+                restart_text = font.render("Press R to Return to Editor | M for Menu", True, (200, 200, 200))
+            elif is_endless_mode:
+                victory_text = font.render("GAME OVER!", True, (100, 255, 100))
+                endless_text = font.render(f"You reached Endless Level {endless_level}!", True, (255, 255, 100))
+                screen.blit(endless_text, (420, 310))
+                restart_text = font.render("Press R to Play Again | M for Menu", True, (200, 200, 200))
+            else:
+                victory_text = font.render("VICTORY!", True, (100, 255, 100))
+                unlock_text = font.render("Endless Mode & Level Editor UNLOCKED!", True, (255, 215, 0))
+                screen.blit(unlock_text, (380, 310))
+                restart_text = font.render("Press R to Play Again | M for Menu", True, (200, 200, 200))
+
             score_text = font.render(f"Final Score: {game_state.total_score}", True, (255, 255, 255))
             spores_text = font.render(f"Spores Collected: {game_state.spore_count}", True, (100, 255, 150))
             lives_text = font.render(f"Lives Remaining: {game_state.lives}", True, (255, 200, 200))
-            restart_text = font.render("Press R to Play Again or ESC to Quit", True, (200, 200, 200))
 
-            screen.blit(victory_text, (530, 280))
-            screen.blit(score_text, (510, 350))
-            screen.blit(spores_text, (480, 400))
-            screen.blit(lives_text, (490, 450))
-            screen.blit(restart_text, (380, 520))
+            screen.blit(victory_text, (500, 260))
+            screen.blit(score_text, (510, 380))
+            screen.blit(spores_text, (480, 420))
+            screen.blit(lives_text, (490, 460))
+            screen.blit(restart_text, (400, 520))
 
         pygame.display.flip()
         clock.tick(60)

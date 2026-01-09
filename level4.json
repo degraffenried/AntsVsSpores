@@ -34,17 +34,17 @@
         {"x": 920, "y": 180, "width": 120, "height": 20, "color": [100, 80, 110]}
     ],
     "monsters": [
-        {"type": "walker", "x": 300, "y": 670, "patrol_range": 40, "speed": 4, "health": 4},
-        {"type": "walker", "x": 500, "y": 630, "patrol_range": 40, "speed": 5, "health": 4},
-        {"type": "walker", "x": 700, "y": 670, "patrol_range": 40, "speed": 4, "health": 4},
-        {"type": "walker", "x": 900, "y": 700, "patrol_range": 60, "speed": 4, "health": 5},
+        {"type": "chompy", "x": 300, "y": 670, "patrol_range": 40, "speed": 4, "health": 4},
+        {"type": "spider", "x": 500, "y": 630, "patrol_range": 40, "speed": 5, "health": 4},
+        {"type": "woodlouse", "x": 700, "y": 670, "patrol_range": 40, "speed": 4, "health": 4},
+        {"type": "snake", "x": 900, "y": 700, "patrol_range": 60, "speed": 4, "health": 4},
         {"type": "flyer", "x": 200, "y": 480, "patrol_range": 100, "speed": 4, "health": 3},
-        {"type": "flyer", "x": 550, "y": 380, "patrol_range": 120, "speed": 5, "health": 3},
+        {"type": "blob", "x": 550, "y": 380, "patrol_range": 80, "speed": 3, "health": 5},
         {"type": "flyer", "x": 900, "y": 450, "patrol_range": 100, "speed": 4, "health": 3},
-        {"type": "walker", "x": 420, "y": 250, "patrol_range": 40, "speed": 4, "health": 5},
-        {"type": "walker", "x": 600, "y": 230, "patrol_range": 60, "speed": 4, "health": 5},
-        {"type": "flyer", "x": 250, "y": 250, "patrol_range": 80, "speed": 5, "health": 3},
-        {"type": "flyer", "x": 800, "y": 250, "patrol_range": 100, "speed": 5, "health": 4},
-        {"type": "walker", "x": 550, "y": 50, "patrol_range": 50, "speed": 4, "health": 6}
+        {"type": "chompy", "x": 420, "y": 250, "patrol_range": 50, "speed": 4, "health": 5},
+        {"type": "snake", "x": 600, "y": 230, "patrol_range": 60, "speed": 4, "health": 4},
+        {"type": "spider", "x": 250, "y": 300, "patrol_range": 60, "speed": 5, "health": 3},
+        {"type": "woodlouse", "x": 800, "y": 300, "patrol_range": 50, "speed": 3, "health": 4},
+        {"type": "blob", "x": 550, "y": 50, "patrol_range": 60, "speed": 3, "health": 6}
     ]
 }

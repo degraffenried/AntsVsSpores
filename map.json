@@ -89,20 +89,20 @@
             "health": 2
         },
         {
-            "type": "walker",
+            "type": "spider",
             "x": 800,
             "y": 700,
             "patrol_range": 80,
-            "speed": 3,
+            "speed": 2,
             "health": 2
         },
         {
-            "type": "walker",
+            "type": "blob",
             "x": 250,
             "y": 550,
             "patrol_range": 60,
             "speed": 2,
-            "health": 2
+            "health": 3
         },
         {
             "type": "flyer",
@@ -113,20 +113,28 @@
             "health": 1
         },
         {
-            "type": "walker",
+            "type": "snake",
             "x": 950,
             "y": 500,
             "patrol_range": 80,
+            "speed": 3,
+            "health": 2
+        },
+        {
+            "type": "chompy",
+            "x": 700,
+            "y": 350,
+            "patrol_range": 60,
             "speed": 2,
             "health": 3
         },
         {
-            "type": "flyer",
-            "x": 400,
-            "y": 200,
-            "patrol_range": 120,
-            "speed": 3,
-            "health": 1
+            "type": "woodlouse",
+            "x": 100,
+            "y": 700,
+            "patrol_range": 100,
+            "speed": 2,
+            "health": 3
         }
     ]
 }

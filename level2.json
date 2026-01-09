@@ -130,7 +130,7 @@
     ],
     "monsters": [
         {
-            "type": "walker",
+            "type": "spider",
             "x": 450,
             "y": 700,
             "patrol_range": 80,
@@ -138,12 +138,12 @@
             "health": 3
         },
         {
-            "type": "walker",
+            "type": "chompy",
             "x": 950,
             "y": 700,
             "patrol_range": 100,
-            "speed": 3,
-            "health": 3
+            "speed": 2,
+            "health": 4
         },
         {
             "type": "flyer",
@@ -154,20 +154,20 @@
             "health": 2
         },
         {
-            "type": "flyer",
+            "type": "blob",
             "x": 700,
             "y": 400,
             "patrol_range": 120,
-            "speed": 3,
-            "health": 2
-        },
-        {
-            "type": "walker",
-            "x": 550,
-            "y": 230,
-            "patrol_range": 60,
             "speed": 2,
             "health": 3
+        },
+        {
+            "type": "snake",
+            "x": 550,
+            "y": 230,
+            "patrol_range": 80,
+            "speed": 3,
+            "health": 2
         },
         {
             "type": "flyer",
@@ -178,12 +178,12 @@
             "health": 2
         },
         {
-            "type": "flyer",
+            "type": "woodlouse",
             "x": 850,
-            "y": 280,
-            "patrol_range": 100,
-            "speed": 4,
-            "health": 2
+            "y": 300,
+            "patrol_range": 60,
+            "speed": 2,
+            "health": 3
         },
         {
             "type": "walker",
