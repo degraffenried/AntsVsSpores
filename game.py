@@ -451,17 +451,17 @@ def main():
                             game_state.total_score += 50  # Partial points for fall death
                             continue
 
-                        # Check player-monster collision
+                        # Check player-monster collision (only take damage once per frame)
                         if player.get_rect().colliderect(monster.get_rect()):
-                            player.health -= 1
                             if not player_hit_this_frame:
+                                player.health -= 1
                                 sound_gen.play("player_hit")
                                 player_hit_this_frame = True
-                            # Knockback
-                            if player.x < monster.x:
-                                player.x -= 20
-                            else:
-                                player.x += 20
+                                # Knockback
+                                if player.x < monster.x:
+                                    player.x -= 20
+                                else:
+                                    player.x += 20
 
                 # Check if all enemies defeated - spawn spore (not in shop)
                 if not is_shop and len(monsters) == 0 and not spore_spawned:
@@ -609,6 +609,9 @@ def main():
                             player.y = level_data['map_data']['player_spawn']['y']
                         player.vel_x = 0
                         player.vel_y = 0
+                        # Reset monster aggro so they don't immediately attack the fresh player
+                        for monster in monsters:
+                            monster.reset_aggro()
 
         # Draw everything
         screen.fill(bg_color)

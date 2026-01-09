@@ -1,10 +1,12 @@
 import pygame
 import math
+import random
 
 
 class Monster:
     def __init__(self, x, y, patrol_range, speed, health):
         self.spawn_x = x
+        self.spawn_y = y
         self.x = x
         self.y = y
         self.width = 40
@@ -27,6 +29,10 @@ class Monster:
         pass
 
     def draw(self, screen):
+        pass
+
+    def reset_aggro(self):
+        """Reset any aggro/targeting state. Override in subclasses with aggro behavior."""
         pass
 
     def has_ground_ahead(self, platforms, check_distance=10, screen_height=800):
@@ -697,7 +703,7 @@ class Snake(Monster):
 
         # Snake configuration
         self.num_segments = 12
-        self.segment_spacing = 8  # pixels between segment samples in history
+        self.segment_spacing = 5  # pixels between segment samples in history
         self.head_size = 10
         self.body_width = 7  # max body width
 
@@ -738,6 +744,17 @@ class Snake(Monster):
             self.is_aggroed = True
             self.aggro_timer = self.aggro_duration
         return self.health <= 0
+
+    def reset_aggro(self):
+        """Reset all aggro and wrap states"""
+        self.is_aggroed = False
+        self.aggro_timer = 0
+        self.is_lunging = False
+        self.lunge_vel_x = 0
+        self.lunge_vel_y = 0
+        self.is_wrapped = False
+        self.wrap_target = None
+        self.wrap_timer = 0
 
     def update(self, platforms, player):
         self.anim += 1
@@ -880,7 +897,7 @@ class Snake(Monster):
         self.wrap_target = player
         self.wrap_timer = self.wrap_duration
         self.wrap_angle = math.atan2(self.y - player.y, self.x - player.x)
-        self.bite_cooldown = 0
+        self.bite_cooldown = random.randint(60, 120)  # First bite after 1-2 seconds
 
     def _update_wrapped(self, player):
         """Update snake while wrapped around player"""
@@ -896,15 +913,18 @@ class Snake(Monster):
         self.bite_cooldown -= 1
         if self.bite_cooldown <= 0:
             player.health -= self.bite_damage
-            self.bite_cooldown = 30  # Bite every 0.5 seconds
+            self.bite_cooldown = random.randint(60, 120)  # Bite every 1-2 seconds
             self.tongue_out = True  # Show tongue when biting
 
         # Update position history to wrap around player
+        # Use increments that account for segment_spacing so segments stay evenly spaced
         center_x = player.x + player.width // 2
         center_y = player.y + player.height // 2
+        angle_per_entry = 0.25 / self.segment_spacing
+        radius_per_entry = 0.5 / self.segment_spacing
         for i in range(len(self.position_history)):
-            angle = self.wrap_angle - i * 0.25
-            radius = wrap_radius + (i * 0.5)  # Spiral outward slightly
+            angle = self.wrap_angle - i * angle_per_entry
+            radius = wrap_radius + (i * radius_per_entry)  # Spiral outward slightly
             hx = center_x + math.cos(angle) * radius
             hy = center_y + math.sin(angle) * radius
             self.position_history[i] = (hx, hy)
@@ -924,12 +944,36 @@ class Snake(Monster):
         self.aggro_timer = self.aggro_duration // 2
 
     def _update_position_history(self):
-        """Update position history for drawing segments"""
+        """Update position history for drawing segments.
+        Interpolates positions when moving fast to keep segments evenly spaced."""
         wave_offset = math.sin(self.slither_phase) * 6
         head_x = self.x + 20
         head_y = self.y + 30 + wave_offset
 
-        self.position_history.insert(0, (head_x, head_y))
+        # Calculate distance from last recorded position
+        if self.position_history:
+            last_x, last_y = self.position_history[0]
+            dx = head_x - last_x
+            dy = head_y - last_y
+            dist = math.sqrt(dx * dx + dy * dy)
+
+            # Target distance between history entries for smooth segments
+            target_step = 2.0
+
+            if dist > target_step:
+                # Interpolate multiple points to keep segments connected
+                num_steps = max(1, int(dist / target_step))
+                for i in range(1, num_steps + 1):
+                    t = i / num_steps
+                    interp_x = last_x + dx * t
+                    interp_y = last_y + dy * t
+                    self.position_history.insert(0, (interp_x, interp_y))
+            else:
+                self.position_history.insert(0, (head_x, head_y))
+        else:
+            self.position_history.insert(0, (head_x, head_y))
+
+        # Trim history to max length
         if len(self.position_history) > self.history_length:
             self.position_history = self.position_history[:self.history_length]
 
@@ -1089,6 +1133,11 @@ class Shriek(Monster):
         self.is_agitated = True
         self.agitation_timer = self.agitation_duration
         return self.health <= 0
+
+    def reset_aggro(self):
+        """Reset agitation state"""
+        self.is_agitated = False
+        self.agitation_timer = 0
 
     def update(self, platforms, player):
         self.anim += 1
