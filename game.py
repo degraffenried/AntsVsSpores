@@ -461,6 +461,12 @@ def main():
                     for monster in monsters[:]:
                         monster.update(platforms, player)
 
+                    # Separate overlapping monsters
+                    for i, monster in enumerate(monsters):
+                        for other in monsters[i+1:]:
+                            monster.separate_from(other)
+
+                    for monster in monsters[:]:
                         # Remove monsters that fall off the map
                         if monster.y > screen_height:
                             monsters.remove(monster)

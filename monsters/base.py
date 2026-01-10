@@ -84,3 +84,43 @@ class Monster:
         """Comprehensive safety check before moving in current direction.
         Returns True if it's safe to continue moving, False if should turn around."""
         return self.has_ground_ahead(platforms, check_distance=10, screen_height=screen_height)
+
+    def separate_from(self, other):
+        """Push this monster away from another monster if overlapping.
+        Returns True if separation occurred."""
+        my_rect = self.get_rect()
+        other_rect = other.get_rect()
+
+        if not my_rect.colliderect(other_rect):
+            return False
+
+        # Calculate overlap
+        overlap_left = my_rect.right - other_rect.left
+        overlap_right = other_rect.right - my_rect.left
+        overlap_top = my_rect.bottom - other_rect.top
+        overlap_bottom = other_rect.bottom - my_rect.top
+
+        # Find smallest horizontal overlap
+        if overlap_left < overlap_right:
+            h_overlap = -overlap_left
+        else:
+            h_overlap = overlap_right
+
+        # Find smallest vertical overlap
+        if overlap_top < overlap_bottom:
+            v_overlap = -overlap_top
+        else:
+            v_overlap = overlap_bottom
+
+        # Push apart along the axis with smallest overlap
+        if abs(h_overlap) < abs(v_overlap):
+            # Horizontal separation - each monster moves half the distance
+            self.x += h_overlap / 2
+            other.x -= h_overlap / 2
+        else:
+            # Vertical separation - only if not a big difference (avoid stacking issues)
+            if abs(v_overlap) < 20:
+                self.y += v_overlap / 2
+                other.y -= v_overlap / 2
+
+        return True
