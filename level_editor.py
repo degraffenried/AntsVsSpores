@@ -773,9 +773,9 @@ class LevelEditor:
         self.screen.blit(text, (200, bar_y + 10))
 
         # Controls hint
-        hint = "Ctrl+S: Save | Ctrl+O: Load | P: Test | Middle-Click: Edit Monster"
+        hint = "Ctrl+N: New | Ctrl+S: Save | Ctrl+O: Load | P: Test"
         hint_text = self.small_font.render(hint, True, (120, 120, 140))
-        self.screen.blit(hint_text, (self.screen_width - 400, bar_y + 12))
+        self.screen.blit(hint_text, (self.screen_width - 320, bar_y + 12))
 
     def _draw_save_dialog(self):
         """Draw save file dialog"""

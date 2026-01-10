@@ -71,6 +71,7 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 | Delete Element | Right Click |
 | Select Tool | 1-9, 0 |
 | Toggle Grid | G |
+| New Level | Ctrl+N |
 | Save Level | Ctrl+S |
 | Load Level | Ctrl+O |
 | Test Play | P |
