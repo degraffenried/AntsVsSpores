@@ -4,6 +4,10 @@ import os
 
 
 class LevelEditor:
+    # Game window dimensions (what the player sees during gameplay)
+    GAME_WIDTH = 1200
+    GAME_HEIGHT = 800
+
     def __init__(self, screen):
         self.screen = screen
         self.screen_width = screen.get_width()
@@ -570,14 +574,22 @@ class LevelEditor:
         # Background
         self.screen.fill(tuple(self.background_color))
 
-        # Draw grid
+        # Draw grid only within game window bounds
         if self.grid_snap:
-            for x in range(0, self.preview_rect.right, self.grid_size):
+            grid_max_x = min(self.GAME_WIDTH, self.preview_rect.right)
+            grid_max_y = min(self.GAME_HEIGHT, self.preview_rect.bottom)
+            for x in range(0, grid_max_x + 1, self.grid_size):
                 pygame.draw.line(self.screen, (50, 55, 65), (x, 0),
-                                (x, self.preview_rect.bottom), 1)
-            for y in range(0, self.preview_rect.bottom, self.grid_size):
+                                (x, grid_max_y), 1)
+            for y in range(0, grid_max_y + 1, self.grid_size):
                 pygame.draw.line(self.screen, (50, 55, 65), (0, y),
-                                (self.preview_rect.right, y), 1)
+                                (grid_max_x, y), 1)
+
+        # Draw game window boundary
+        boundary_x = min(self.GAME_WIDTH, self.preview_rect.right)
+        boundary_y = min(self.GAME_HEIGHT, self.preview_rect.bottom)
+        pygame.draw.rect(self.screen, (100, 100, 120),
+                        (0, 0, boundary_x, boundary_y), 2)
 
         # Draw platforms
         for p in self.platforms:
