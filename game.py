@@ -11,7 +11,7 @@ from spore import Spore
 from portal import Portal
 from shop_item import ShopItem
 from game_platform import Platform
-from monsters import Monster, Walker, Flyer, Spider, Blob, Taterbug, Chompy, Snake, create_monster
+from monsters import Monster, Walker, Flyer, Spider, Blob, Taterbug, Chompy, Snake, Shriek, create_monster
 from sound_generator import SoundGenerator
 from music_generator import MusicGenerator
 from save_manager import SaveManager
