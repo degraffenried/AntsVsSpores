@@ -21,6 +21,7 @@ class LevelEditor:
         self.platforms = []
         self.monsters = []
         self.spawn_point = {"x": 100, "y": 650}
+        self.portal_position = {"x": 560, "y": 10}  # Default top center
         self.background_color = [30, 35, 45]
 
         # Editor state
@@ -90,7 +91,8 @@ class LevelEditor:
         return {
             "platforms": copy.deepcopy(self.platforms),
             "monsters": copy.deepcopy(self.monsters),
-            "spawn_point": copy.deepcopy(self.spawn_point)
+            "spawn_point": copy.deepcopy(self.spawn_point),
+            "portal_position": copy.deepcopy(self.portal_position)
         }
 
     def _mark_dirty(self):
@@ -107,6 +109,7 @@ class LevelEditor:
         self.platforms = []
         self.monsters = []
         self.spawn_point = {"x": 100, "y": 650}
+        self.portal_position = {"x": 560, "y": 10}
         self.background_color = [30, 35, 45]
         self.selected_element = None
         self.current_filename = None
@@ -261,7 +264,8 @@ class LevelEditor:
             self.spawn_point = {"x": snapped[0], "y": snapped[1]}
             self._mark_dirty()
         elif tool == "portal":
-            pass  # Portal is always at top center
+            self.portal_position = {"x": snapped[0], "y": snapped[1]}
+            self._mark_dirty()
         elif tool == "delete":
             self._delete_at(pos)
         elif tool in ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]:
@@ -521,6 +525,7 @@ class LevelEditor:
             "height": self.screen_height,
             "background_color": self.background_color,
             "player_spawn": self.spawn_point,
+            "portal_position": self.portal_position,
             "platforms": self.platforms,
             "monsters": self.monsters
         }
@@ -542,6 +547,7 @@ class LevelEditor:
             self.platforms = data.get("platforms", [])
             self.monsters = data.get("monsters", [])
             self.spawn_point = data.get("player_spawn", {"x": 100, "y": 650})
+            self.portal_position = data.get("portal_position", {"x": 560, "y": 10})
             self.background_color = data.get("background_color", [30, 35, 45])
             self.current_filename = filename
             self._mark_clean()
@@ -554,6 +560,7 @@ class LevelEditor:
             "height": self.screen_height,
             "background_color": self.background_color,
             "player_spawn": self.spawn_point,
+            "portal_position": self.portal_position,
             "platforms": self.platforms,
             "monsters": self.monsters
         }
@@ -597,12 +604,13 @@ class LevelEditor:
         spawn_text = self.font.render("SPAWN", True, (50, 150, 255))
         self.screen.blit(spawn_text, (self.spawn_point["x"], self.spawn_point["y"] - 20))
 
-        # Draw portal indicator
-        portal_x = self.preview_rect.width // 2 - 40
-        pygame.draw.rect(self.screen, (100, 200, 255), (portal_x, 10, 80, 60))
-        pygame.draw.rect(self.screen, (255, 255, 255), (portal_x, 10, 80, 60), 2)
+        # Draw portal indicator at custom position
+        portal_x = self.portal_position["x"]
+        portal_y = self.portal_position["y"]
+        pygame.draw.rect(self.screen, (100, 200, 255), (portal_x, portal_y, 80, 60))
+        pygame.draw.rect(self.screen, (255, 255, 255), (portal_x, portal_y, 80, 60), 2)
         portal_text = self.font.render("PORTAL", True, (255, 255, 255))
-        self.screen.blit(portal_text, (portal_x + 10, 30))
+        self.screen.blit(portal_text, (portal_x + 10, portal_y + 20))
 
         # Draw monsters
         monster_colors = {

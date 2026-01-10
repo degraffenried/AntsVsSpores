@@ -41,28 +41,32 @@ class Spider(Monster):
                     self.direction = -self.wall_side  # Face away from wall
         else:
             # Normal ground movement
+            # Check on_ground BEFORE adding gravity
+            on_ground = self.vel_y == 0
+
             # Apply gravity
             self.vel_y += self.gravity
             if self.vel_y > 20:
                 self.vel_y = 20
 
-            # Check for edge before moving (only when on ground)
-            on_ground = self.vel_y == 0
-            ground_ahead = self.has_ground_ahead(platforms)
-
             # Track player if within range
             dist_to_player = abs(player.x - self.x)
             if dist_to_player < 250:  # Increased detection range
-                if player.x > self.x:
-                    self.direction = 1
-                else:
-                    self.direction = -1
-                # Only move toward player if there's ground ahead (or we can climb)
-                if not on_ground or ground_ahead:
+                # Determine direction toward player
+                wanted_direction = 1 if player.x > self.x else -1
+
+                # Check if it's safe to go toward the player
+                self.direction = wanted_direction
+                if self.has_ground_ahead(platforms):
+                    # Safe to chase
                     self.x += self.speed * self.direction * 1.5
+                else:
+                    # Not safe - don't move toward player, stay at edge
+                    # Keep facing the player but don't walk off
+                    pass
             else:
-                # Check for edge during patrol
-                if on_ground and not ground_ahead:
+                # Patrol mode - check for edge before moving
+                if on_ground and not self.has_ground_ahead(platforms):
                     self.direction *= -1
                 # Normal patrol movement
                 self.x += self.speed * self.direction

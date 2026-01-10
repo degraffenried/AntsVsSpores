@@ -306,7 +306,8 @@ def main():
                         monsters = [create_monster(m) for m in test_data['monsters']]
                         monsters = [m for m in monsters if m is not None]
                         bullets = []
-                        portal = Portal(screen_width // 2 - 40, 10)
+                        portal_pos = test_data.get('portal_position', {'x': screen_width // 2 - 40, 'y': 10})
+                        portal = Portal(portal_pos['x'], portal_pos['y'])
                         spore = None
                         bg_color = tuple(test_data['background_color'])
                         has_spore = False
@@ -316,6 +317,21 @@ def main():
                         game_over = False
                         victory = False
                         respawn_timer = 0
+                        # Store level data for respawning
+                        level_data = {
+                            'map_data': test_data,
+                            'player': player,
+                            'platforms': platforms,
+                            'monsters': monsters,
+                            'bullets': bullets,
+                            'portal': portal,
+                            'spore': spore,
+                            'bg_color': bg_color,
+                            'has_spore': False,
+                            'spore_spawned': False,
+                            'is_shop': False,
+                            'shop_items': []
+                        }
                         game_state.reset()
                         music_gen.play('main_theme')
                         current_music = 'main_theme'
@@ -462,6 +478,8 @@ def main():
                                     player.x -= 20
                                 else:
                                     player.x += 20
+                                # Resolve any collisions from knockback (don't push into walls)
+                                player.resolve_pushed_collision(platforms)
 
                 # Check if all enemies defeated - spawn spore (not in shop)
                 if not is_shop and len(monsters) == 0 and not spore_spawned:
@@ -600,11 +618,12 @@ def main():
                     else:
                         # Respawn at level start
                         respawn_timer = 120  # 2 seconds
-                        if is_endless_mode or game_mode == "test":
-                            # Use stored spawn point for endless/test mode
+                        if is_endless_mode:
+                            # Use default spawn point for endless mode
                             player.x = 100
                             player.y = 650
                         else:
+                            # Use stored spawn point (works for both normal and test mode)
                             player.x = level_data['map_data']['player_spawn']['x']
                             player.y = level_data['map_data']['player_spawn']['y']
                         player.vel_x = 0

@@ -100,7 +100,7 @@ class Blob(Monster):
         return False
 
     def _can_slosh_forward(self, platforms, screen_height=800):
-        """Check if we can safely slosh in current direction - NEVER go off screen"""
+        """Check if we can safely slosh in current direction - NEVER go off screen or edges"""
         future_x = self.back_x + self.slosh_distance * self.direction
 
         # Hard screen edge limits - never go past these
@@ -111,21 +111,20 @@ class Blob(Monster):
         if self._has_ground_at(future_x, platforms):
             return True
 
-        # No immediate ground - DO NOT proceed unless there's definitely a platform below
-        if not self._has_platform_below(future_x, platforms, screen_height):
-            return False
+        # No ground at future position - don't go off the edge
+        # Only allow if there's a platform very close below (within one slosh height)
+        close_below_rect = pygame.Rect(
+            future_x - 20,
+            self.pool_y + self.base_radius + 5,
+            40,
+            self.slosh_distance + 20  # Only check a short distance below
+        )
+        for platform in platforms:
+            if close_below_rect.colliderect(platform.rect):
+                return True
 
-        # Extra safety: check current platform edge
-        # If we're near an edge and would step off, don't do it
-        current_has_ground = self._has_ground_at(self.back_x, platforms)
-        next_has_ground = self._has_ground_at(future_x, platforms)
-
-        if current_has_ground and not next_has_ground:
-            # We're about to step off an edge - only allow if there's definitely a platform below
-            if not self._has_platform_below(future_x, platforms, screen_height):
-                return False
-
-        return True
+        # No safe ground ahead - turn around
+        return False
 
     def update(self, platforms, player):
         self.wobble += 0.1
@@ -152,8 +151,8 @@ class Blob(Monster):
 
         # Spread when scared (wider, flatter) - quickly flatten when scared, slowly return to normal
         if self.is_scared:
-            target_spread = 0.5
-            self.spread_amount += (target_spread - self.spread_amount) * 0.15  # Fast flatten
+            target_spread = 0.85
+            self.spread_amount += (target_spread - self.spread_amount) * 0.2  # Fast flatten
         else:
             target_spread = 0.0
             self.spread_amount += (target_spread - self.spread_amount) * 0.08  # Slower return
@@ -161,9 +160,18 @@ class Blob(Monster):
             if self.spread_amount < 0.02:
                 self.spread_amount = 0.0
 
-        # Direction
-        if self.is_scared:
-            self.direction = self._find_escape_direction(player)
+        # Direction - when scared, try to escape but respect edges
+        if self.is_scared and not self.is_mid_slosh:
+            escape_dir = self._find_escape_direction(player)
+            # Only escape that way if it's safe
+            old_dir = self.direction
+            self.direction = escape_dir
+            if not self._can_slosh_forward(platforms):
+                # Can't escape that way, try the other direction
+                self.direction = -escape_dir
+                if not self._can_slosh_forward(platforms):
+                    # Trapped! Stay put (keep current direction, will turn at edge)
+                    self.direction = old_dir
 
         # Apply gravity
         self.vel_y += self.gravity
@@ -174,7 +182,7 @@ class Blob(Monster):
         self.slime_trails = [(sx, sy, t - 1) for sx, sy, t in self.slime_trails if t > 1]
 
         # === SLOSHING MOVEMENT ===
-        slosh_speed = self.slosh_speed * (1.2 if self.is_scared else 1.0)
+        slosh_speed = self.slosh_speed * (1.6 if self.is_scared else 1.0)
 
         # Check if we can continue in this direction
         if not self.is_mid_slosh:
@@ -215,9 +223,10 @@ class Blob(Monster):
             merge = (self.slosh_phase - 0.65) / 0.35  # 0 to 1
             merge = merge ** 1.5  # Accelerate at end
 
-            target_x = self.back_x + self.slosh_distance * self.direction
+            # Use front_x as target (already set correctly in Phase 2)
+            # Don't recalculate from back_x as it shifts during this phase
+            target_x = self.front_x
             self.back_x = self.back_x + (target_x - self.back_x) * merge
-            self.front_x = target_x
             self.front_mass = 0.80 + merge * 0.20  # 80% to 100%
             self.back_mass = 1.0 - self.front_mass
             self.neck_thickness = 0.70 * (1.0 - merge)  # Neck disappears as pools merge
@@ -303,8 +312,8 @@ class Blob(Monster):
         # Calculate pool sizes based on mass
         # Only spread out (flatter, wider) when scared - otherwise normal height
         if self.is_scared and self.spread_amount > 0.05:
-            spread_mult = 1.0 + self.spread_amount * 0.6
-            height_mult = 1.0 / (1.0 + self.spread_amount * 0.4)
+            spread_mult = 1.0 + self.spread_amount * 0.8  # Get wider
+            height_mult = 1.0 / (1.0 + self.spread_amount * 1.2)  # Get much flatter (ducking)
         else:
             spread_mult = 1.0
             height_mult = 1.0

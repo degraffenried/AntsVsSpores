@@ -108,37 +108,49 @@ class Snake(Monster):
             # Lunge if player is in range and we're on ground
             on_ground = self.vel_y == 0 or self.vel_y < 1
             if dist_to_player < 200 and on_ground:
-                self._start_lunge(player)
-                return
+                # Only lunge if we can reach the player or land safely
+                if self._can_lunge_safely(player, platforms):
+                    self._start_lunge(player)
+                    return
 
         # Normal patrol movement
+        # Check on_ground BEFORE adding gravity
+        on_ground = self.vel_y == 0
+
         # Apply gravity
         self.vel_y += self.gravity
         if self.vel_y > 20:
             self.vel_y = 20
 
-        # Check for edge before moving (only when on ground)
-        on_ground = self.vel_y == 0
-        if on_ground and not self.has_ground_ahead(platforms):
-            self.direction *= -1
-
         # Movement speed - faster when aggroed
         if self.is_aggroed:
             base_speed = self.speed * 2.0
-            # Chase player
-            if player.x > self.x:
-                self.direction = 1
-            else:
-                self.direction = -1
+            # Chase player, but check if it's safe first
+            wanted_direction = 1 if player.x > self.x else -1
+            self.direction = wanted_direction
+            # Check if safe to go toward player
+            if on_ground and not self.has_ground_ahead(platforms):
+                # Not safe - don't move toward player
+                self.direction = -wanted_direction
+                # Check if the other direction is safe
+                if not self.has_ground_ahead(platforms):
+                    # Both directions unsafe - stay put
+                    base_speed = 0
+                    self.direction = wanted_direction  # Face player but don't move
         else:
             base_speed = self.speed * 1.2
+            # Normal patrol - check for edge
+            if on_ground and not self.has_ground_ahead(platforms):
+                self.direction *= -1
 
         self.x += base_speed * self.direction
 
-        if self.x > self.spawn_x + self.patrol_range:
-            self.direction = -1
-        elif self.x < self.spawn_x - self.patrol_range:
-            self.direction = 1
+        # Patrol bounds only when not aggroed
+        if not self.is_aggroed:
+            if self.x > self.spawn_x + self.patrol_range:
+                self.direction = -1
+            elif self.x < self.spawn_x - self.patrol_range:
+                self.direction = 1
 
         # Move vertically
         self.y += self.vel_y
@@ -153,6 +165,45 @@ class Snake(Monster):
 
         # Update position history for normal movement
         self._update_position_history()
+
+    def _can_lunge_safely(self, player, platforms, screen_height=800):
+        """Check if lunging toward player would be safe (reach player or land on platform)"""
+        # Calculate lunge trajectory (same as _start_lunge)
+        dx = player.x - self.x
+        dy = player.y - self.y
+        dist = max(1, math.sqrt(dx * dx + dy * dy))
+
+        lunge_power = 12
+        vel_x = (dx / dist) * lunge_power
+        vel_y = -8
+        gravity = self.gravity * 0.8
+
+        # Simulate the lunge trajectory
+        sim_x = self.x
+        sim_y = self.y
+
+        for _ in range(120):  # Simulate up to 2 seconds
+            vel_y += gravity
+            sim_x += vel_x
+            sim_y += vel_y
+
+            # Check if we'd reach the player
+            dist_to_player = math.sqrt((player.x - sim_x) ** 2 + (player.y - sim_y) ** 2)
+            if dist_to_player < 40:
+                return True  # Would reach the player
+
+            # Check if we'd land on a platform
+            sim_rect = pygame.Rect(sim_x, sim_y, self.width, self.height)
+            for platform in platforms:
+                if sim_rect.colliderect(platform.rect) and vel_y > 0:
+                    return True  # Would land on a platform
+
+            # Check if we'd fall off screen
+            if sim_y > screen_height:
+                return False  # Would fall to death
+
+        # If simulation ended without landing, not safe
+        return False
 
     def _start_lunge(self, player):
         """Start lunging toward the player"""

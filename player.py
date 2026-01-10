@@ -124,6 +124,32 @@ class Player:
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
 
+    def resolve_pushed_collision(self, platforms):
+        """Resolve collisions when pushed by external forces (monsters, etc).
+        Call this after any external position changes."""
+        player_rect = self.get_rect()
+        for platform in platforms:
+            if player_rect.colliderect(platform.rect):
+                # Calculate overlap on each axis
+                overlap_left = player_rect.right - platform.rect.left
+                overlap_right = platform.rect.right - player_rect.left
+                overlap_top = player_rect.bottom - platform.rect.top
+                overlap_bottom = platform.rect.bottom - player_rect.top
+
+                # Find smallest overlap to determine push direction
+                min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
+
+                if min_overlap == overlap_left:
+                    self.x = platform.rect.left - self.width
+                elif min_overlap == overlap_right:
+                    self.x = platform.rect.right
+                elif min_overlap == overlap_top:
+                    self.y = platform.rect.top - self.height
+                    self.vel_y = 0
+                elif min_overlap == overlap_bottom:
+                    self.y = platform.rect.bottom
+                    self.vel_y = 0
+
     def draw(self, screen):
         # Draw body
         pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
