@@ -61,6 +61,8 @@ class LevelEditor:
         self.show_new_dialog = False
         self.filename_input = ""
         self.available_files = []
+        self.load_scroll_offset = 0
+        self.load_visible_items = 12  # Number of files visible at once
 
         # Monster editor state
         self.show_monster_editor = False
@@ -198,16 +200,29 @@ class LevelEditor:
                         self.load_level(self.available_files[self.selected_element])
                         self.show_load_dialog = False
                         self.selected_element = None
+                        self.load_scroll_offset = 0
                 elif event.key == pygame.K_UP and self.available_files:
                     if self.selected_element is None:
                         self.selected_element = 0
                     else:
                         self.selected_element = (self.selected_element - 1) % len(self.available_files)
+                    # Scroll up if selection is above visible area
+                    if self.selected_element < self.load_scroll_offset:
+                        self.load_scroll_offset = self.selected_element
+                    # Handle wrap-around to bottom
+                    elif self.selected_element == len(self.available_files) - 1:
+                        self.load_scroll_offset = max(0, len(self.available_files) - self.load_visible_items)
                 elif event.key == pygame.K_DOWN and self.available_files:
                     if self.selected_element is None:
                         self.selected_element = 0
                     else:
                         self.selected_element = (self.selected_element + 1) % len(self.available_files)
+                    # Scroll down if selection is below visible area
+                    if self.selected_element >= self.load_scroll_offset + self.load_visible_items:
+                        self.load_scroll_offset = self.selected_element - self.load_visible_items + 1
+                    # Handle wrap-around to top
+                    elif self.selected_element == 0:
+                        self.load_scroll_offset = 0
 
             elif self.show_new_dialog:
                 if event.key == pygame.K_y:
@@ -499,6 +514,7 @@ class LevelEditor:
         elif event.key == pygame.K_o and mods & pygame.KMOD_CTRL:
             self.show_load_dialog = True
             self.selected_element = 0
+            self.load_scroll_offset = 0
             self._refresh_file_list()
         elif event.key == pygame.K_p:
             return "test_play"
@@ -826,15 +842,15 @@ class LevelEditor:
         self.screen.blit(hint, (dialog_x + 45, dialog_y + 110))
 
     def _draw_load_dialog(self):
-        """Draw load file dialog"""
+        """Draw load file dialog with scrollable file list"""
         # Overlay
         overlay = pygame.Surface((self.screen_width, self.screen_height))
         overlay.fill((0, 0, 0))
         overlay.set_alpha(180)
         self.screen.blit(overlay, (0, 0))
 
-        # Dialog box
-        dialog_w, dialog_h = 400, 300
+        # Dialog box - taller to fit more files
+        dialog_w, dialog_h = 400, 450
         dialog_x = (self.screen_width - dialog_w) // 2
         dialog_y = (self.screen_height - dialog_h) // 2
 
@@ -847,28 +863,57 @@ class LevelEditor:
         title = self.title_font.render("Load Level", True, (255, 255, 255))
         self.screen.blit(title, (dialog_x + 150, dialog_y + 15))
 
-        # File list
+        # File list with scrolling
         if self.available_files:
-            for i, filename in enumerate(self.available_files[:8]):  # Show max 8
+            # Get visible slice of files
+            visible_files = self.available_files[self.load_scroll_offset:
+                                                  self.load_scroll_offset + self.load_visible_items]
+
+            for i, filename in enumerate(visible_files):
+                actual_index = i + self.load_scroll_offset
                 y = dialog_y + 60 + i * 28
 
-                if i == self.selected_element:
+                if actual_index == self.selected_element:
                     pygame.draw.rect(self.screen, (80, 85, 95),
-                                   (dialog_x + 20, y - 2, dialog_w - 40, 26))
+                                   (dialog_x + 20, y - 2, dialog_w - 60, 26))
                     color = (255, 255, 100)
                 else:
                     color = (200, 200, 200)
 
                 text = self.font.render(filename, True, color)
                 self.screen.blit(text, (dialog_x + 30, y))
+
+            # Draw scroll indicators if needed
+            total_files = len(self.available_files)
+            if total_files > self.load_visible_items:
+                # Scroll bar background
+                scrollbar_x = dialog_x + dialog_w - 25
+                scrollbar_y = dialog_y + 60
+                scrollbar_h = self.load_visible_items * 28
+                pygame.draw.rect(self.screen, (40, 45, 55),
+                               (scrollbar_x, scrollbar_y, 10, scrollbar_h))
+
+                # Scroll bar thumb
+                thumb_h = max(20, scrollbar_h * self.load_visible_items // total_files)
+                max_offset = total_files - self.load_visible_items
+                if max_offset > 0:
+                    thumb_y = scrollbar_y + (scrollbar_h - thumb_h) * self.load_scroll_offset // max_offset
+                else:
+                    thumb_y = scrollbar_y
+                pygame.draw.rect(self.screen, (100, 105, 115),
+                               (scrollbar_x, thumb_y, 10, thumb_h))
+
+                # Show file count
+                count_text = self.small_font.render(f"{total_files} files", True, (150, 150, 150))
+                self.screen.blit(count_text, (dialog_x + dialog_w - 60, dialog_y + 420))
         else:
             no_files = self.font.render("No saved levels found", True, (150, 150, 150))
-            self.screen.blit(no_files, (dialog_x + 120, dialog_y + 120))
+            self.screen.blit(no_files, (dialog_x + 120, dialog_y + 200))
 
         # Hint
         hint = self.font.render("UP/DOWN: Select | ENTER: Load | ESC: Cancel",
                                True, (150, 150, 150))
-        self.screen.blit(hint, (dialog_x + 55, dialog_y + 270))
+        self.screen.blit(hint, (dialog_x + 55, dialog_y + 420))
 
     def _draw_new_dialog(self):
         """Draw unsaved changes confirmation dialog"""
