@@ -44,79 +44,70 @@ class EndlessLevelGenerator:
     def _generate_shop_level(self):
         """Generate a shop level for endless mode"""
         # Shop item costs scale with difficulty
-        base_cost = max(1, self.level_count // 5)
+        base_cost = max(6, (self.level_count // 5) * 4)
 
-        shop_items = [
-            {
-                "name": "Extra Life",
-                "type": "life",
-                "cost": base_cost,
-                "description": "+1 Life",
-                "x": 250,
-                "y": 550
-            },
-            {
-                "name": "Life Bundle",
-                "type": "life_bundle",
-                "cost": base_cost * 2,
-                "description": "+3 Lives",
-                "x": 450,
-                "y": 550
-            },
-            {
-                "name": "Rapid Fire",
-                "type": "weapon_rapid",
-                "cost": base_cost * 2,
-                "description": "Faster shooting",
-                "x": 650,
-                "y": 550
-            },
-            {
-                "name": "Spread Shot",
-                "type": "weapon_spread",
-                "cost": base_cost * 3,
-                "description": "3-way shot",
-                "x": 850,
-                "y": 550
-            }
+        all_items = [
+            {"name": "Life Bundle", "type": "life_bundle", "cost": base_cost * 2, "description": "+3 Lives"},
+            {"name": "Rapid Fire", "type": "weapon_rapid", "cost": base_cost + 4, "description": "Faster shooting"},
+            {"name": "Spread Shot", "type": "weapon_spread", "cost": base_cost + 4, "description": "3-way shot"},
+            {"name": "Missile", "type": "weapon_missile", "cost": base_cost * 2, "description": "Homing missiles"},
+            {"name": "Damage Boost", "type": "damage_boost", "cost": base_cost, "description": "2x bullet damage"},
+            {"name": "Speed Boost", "type": "speed_boost", "cost": base_cost, "description": "Move 50% faster"},
+            {"name": "Magnet", "type": "magnet", "cost": base_cost - 2, "description": "Attract spores"},
         ]
+
+        # Pick 3 random items
+        selected = random.sample(all_items, 3)
+        positions = [270, 570, 870]
+        shop_items = []
+        for i, item in enumerate(selected):
+            shop_items.append({
+                "name": item["name"],
+                "type": item["type"],
+                "cost": item["cost"],
+                "description": item["description"],
+                "x": positions[i],
+                "y": 550
+            })
 
         return {
             "name": f"Endless Shop {self.level_count // 5}",
             "width": self.screen_width,
             "height": self.screen_height,
-            "background_color": [20, 35, 20],
+            "background_color": [120, 160, 120],
             "is_shop": True,
             "player_spawn": {"x": 100, "y": 650},
+            "portal_position": {"x": 560, "y": 60},
             "platforms": [
                 {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [60, 80, 60]},
-                {"x": 150, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
-                {"x": 400, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
-                {"x": 650, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
-                {"x": 900, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
-                {"x": 400, "y": 400, "width": 400, "height": 20, "color": [80, 100, 80]},
-                {"x": 500, "y": 200, "width": 200, "height": 20, "color": [100, 150, 100]}
+                {"x": 200, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 500, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 800, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 350, "y": 450, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 650, "y": 450, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 500, "y": 300, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 500, "y": 150, "width": 200, "height": 20, "color": [100, 150, 100]}
             ],
             "monsters": [],
             "shop_items": shop_items
         }
 
     def _random_background(self):
-        """Generate a random dark background color"""
-        # Create themed backgrounds
+        """Generate a random light background color for better contrast"""
+        # Create themed backgrounds - lighter for visibility
         themes = [
-            [30, 20, 40],   # Purple night
-            [20, 35, 25],   # Forest dark
-            [40, 25, 20],   # Cave brown
-            [20, 30, 40],   # Ocean deep
-            [35, 35, 25],   # Desert night
+            [140, 130, 160],   # Soft purple
+            [120, 155, 135],   # Soft green
+            [150, 135, 120],   # Soft brown
+            [125, 145, 165],   # Soft blue
+            [155, 150, 130],   # Soft tan
         ]
         base = random.choice(themes)
         # Add some variation
         return [
-            max(0, min(60, base[0] + random.randint(-10, 10))),
-            max(0, min(60, base[1] + random.randint(-10, 10))),
-            max(0, min(60, base[2] + random.randint(-10, 10)))
+            max(100, min(180, base[0] + random.randint(-15, 15))),
+            max(100, min(180, base[1] + random.randint(-15, 15))),
+            max(100, min(180, base[2] + random.randint(-15, 15)))
         ]
 
     def _generate_spawn(self):
@@ -178,24 +169,42 @@ class EndlessLevelGenerator:
                     max(0, min(255, main_color[2] + random.randint(-15, 15)))
                 ]
 
-                platforms.append({
+                platform_data = {
                     "x": x,
                     "y": platform_y,
                     "width": width,
                     "height": 20,
                     "color": platform_color
-                })
+                }
+                # 15% chance to be bouncy, 10% chance to be unstable
+                roll = random.random()
+                if roll < 0.15:
+                    platform_data["bouncy"] = True
+                    platform_data["color"] = [200, 80, 150]  # Pink for bouncy
+                elif roll < 0.25:
+                    platform_data["unstable"] = True
+                    platform_data["color"] = [180, 120, 60]  # Orange/brown for unstable
+                platforms.append(platform_data)
 
         # Add some extra floating platforms
         extra_platforms = random.randint(1, 3)
         for _ in range(extra_platforms):
-            platforms.append({
+            extra_platform = {
                 "x": random.randint(100, self.screen_width - 150),
                 "y": random.randint(150, 400),
                 "width": random.randint(60, 100),
                 "height": 20,
                 "color": [max(0, c + 20) for c in main_color]
-            })
+            }
+            # 25% chance for floating platforms to be bouncy, 15% unstable
+            roll = random.random()
+            if roll < 0.25:
+                extra_platform["bouncy"] = True
+                extra_platform["color"] = [200, 80, 150]  # Pink for bouncy
+            elif roll < 0.40:
+                extra_platform["unstable"] = True
+                extra_platform["color"] = [180, 120, 60]  # Orange/brown for unstable
+            platforms.append(extra_platform)
 
         return platforms
 
@@ -204,7 +213,7 @@ class EndlessLevelGenerator:
         monsters = []
 
         # Available monster types (unlock more as difficulty increases)
-        all_types = ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]
+        all_types = ["walker", "flyer", "spider", "blob", "taterbug", "razorback", "chompy", "snake", "shriek"]
 
         # Determine available types based on difficulty
         available_count = min(len(all_types), 2 + int(self.difficulty))

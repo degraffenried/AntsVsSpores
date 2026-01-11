@@ -1,0 +1,236 @@
+{
+    "name": "gideon",
+    "width": 1250,
+    "height": 900,
+    "background_color": [
+        30,
+        35,
+        45
+    ],
+    "player_spawn": {
+        "x": 80,
+        "y": 60
+    },
+    "portal_position": {
+        "x": 1080,
+        "y": 700
+    },
+    "spore_position": {
+        "x": 600,
+        "y": 400
+    },
+    "platforms": [
+        {
+            "x": 0,
+            "y": 0,
+            "width": 40,
+            "height": 800,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 760,
+            "width": 1120,
+            "height": 40,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 1160,
+            "y": 0,
+            "width": 40,
+            "height": 800,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 0,
+            "width": 1120,
+            "height": 40,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 120,
+            "width": 1060,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 100,
+            "y": 220,
+            "width": 1060,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 320,
+            "width": 1060,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 100,
+            "y": 420,
+            "width": 1060,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 520,
+            "width": 1060,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 80,
+            "y": 640,
+            "width": 1080,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        }
+    ],
+    "monsters": [
+        {
+            "type": "blob",
+            "x": 220,
+            "y": 720,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "snake",
+            "x": 720,
+            "y": 180,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3,
+            "aggro_duration": 180
+        },
+        {
+            "type": "shriek",
+            "x": 940,
+            "y": 560,
+            "patrol_range": 180,
+            "speed": 1,
+            "health": 1,
+            "aggro_duration": 120
+        },
+        {
+            "type": "taterbug",
+            "x": 740,
+            "y": 80,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "taterbug",
+            "x": 420,
+            "y": 80,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "spider",
+            "x": 800,
+            "y": 360,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "blob",
+            "x": 280,
+            "y": 280,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "chompy",
+            "x": 580,
+            "y": 720,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "chompy",
+            "x": 880,
+            "y": 720,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "snake",
+            "x": 320,
+            "y": 600,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3,
+            "aggro_duration": 180
+        },
+        {
+            "type": "snake",
+            "x": 720,
+            "y": 480,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3,
+            "aggro_duration": 180
+        },
+        {
+            "type": "spider",
+            "x": 260,
+            "y": 360,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        }
+    ]
+}

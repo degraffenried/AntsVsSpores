@@ -1,0 +1,21 @@
+{
+    "name": "Tutorial 10 - Snake Enemy",
+    "width": 1200,
+    "height": 800,
+    "background_color": [130, 150, 120],
+    "tutorial_prompt": "SNAKE: Coils up and LUNGES at you from a distance! Keep moving to dodge!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 600, "y": 650},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [100, 100, 100]},
+        {"x": 200, "y": 550, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 600, "y": 450, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 900, "y": 350, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 250, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "snake", "x": 900, "y": 700, "patrol_range": 100, "speed": 2, "health": 2, "aggro_duration": 180},
+        {"type": "snake", "x": 650, "y": 400, "patrol_range": 80, "speed": 2, "health": 2, "aggro_duration": 180}
+    ]
+}

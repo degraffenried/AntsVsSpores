@@ -1,0 +1,17 @@
+{
+    "name": "Tutorial 2 - Jumping",
+    "width": 1200,
+    "height": 800,
+    "background_color": [130, 150, 170],
+    "tutorial_prompt": "Press SPACE to jump! Press W or SPACE again in mid-air to double jump!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 1000, "y": 290},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 300, "height": 50, "color": [100, 100, 100]},
+        {"x": 400, "y": 650, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 650, "y": 550, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 900, "y": 450, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 950, "y": 350, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": []
+}

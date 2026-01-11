@@ -1,0 +1,22 @@
+{
+    "name": "Tutorial 4 - Spores & Portal",
+    "width": 1200,
+    "height": 800,
+    "background_color": [130, 150, 170],
+    "tutorial_prompt": "Defeat all enemies to spawn a SPORE. Collect the spore to activate the PORTAL at the top!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 600, "y": 400},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [100, 100, 100]},
+        {"x": 200, "y": 600, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 500, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 800, "y": 400, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 300, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 150, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "walker", "x": 550, "y": 450, "patrol_range": 60, "speed": 1, "health": 1},
+        {"type": "walker", "x": 850, "y": 350, "patrol_range": 50, "speed": 1, "health": 1}
+    ]
+}

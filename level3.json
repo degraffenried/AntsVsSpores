@@ -2,7 +2,7 @@
     "name": "Level 3 - The Caverns",
     "width": 1200,
     "height": 800,
-    "background_color": [25, 30, 40],
+    "background_color": [110, 140, 130],
     "player_spawn": {
         "x": 50,
         "y": 700
@@ -41,6 +41,6 @@
         {"type": "spider", "x": 300, "y": 300, "patrol_range": 60, "speed": 4, "health": 2},
         {"type": "chompy", "x": 900, "y": 350, "patrol_range": 50, "speed": 3, "health": 3},
         {"type": "blob", "x": 400, "y": 100, "patrol_range": 60, "speed": 2, "health": 4},
-        {"type": "taterbug", "x": 800, "y": 130, "patrol_range": 60, "speed": 2, "health": 3}
+        {"type": "razorback", "x": 800, "y": 130, "patrol_range": 60, "speed": 3, "health": 4}
     ]
 }

@@ -1,0 +1,21 @@
+{
+    "name": "Tutorial 3 - Shooting",
+    "width": 1200,
+    "height": 800,
+    "background_color": [130, 150, 170],
+    "tutorial_prompt": "Press RIGHT SHIFT to shoot! Face the direction you want to shoot. Defeat the enemy!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 600, "y": 650},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [100, 100, 100]},
+        {"x": 200, "y": 600, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 450, "y": 480, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 700, "y": 360, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 450, "y": 240, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 120, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "walker", "x": 800, "y": 700, "patrol_range": 50, "speed": 0, "health": 1}
+    ]
+}

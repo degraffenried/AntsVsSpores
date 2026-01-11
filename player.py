@@ -1,5 +1,5 @@
 import pygame
-from bullet import Bullet
+from bullet import Bullet, Missile
 
 
 class Player:
@@ -21,10 +21,18 @@ class Player:
         self.color = (50, 150, 255)
         self.jump_count = 0
         self.max_jumps = 2
-        # Weapon system: 'normal', 'rapid', 'spread'
+        # Weapon system: 'normal', 'rapid', 'spread', 'missile'
         self.weapon = 'normal'
         self.has_rapid = False
         self.has_spread = False
+        self.has_missile = False
+        # Power-up flags
+        self.damage_boost = False  # Bullets deal 2x damage
+        self.speed_boost = False   # Move 50% faster
+        self.has_magnet = False    # Spores attracted to player
+        self.has_pierce = False    # Bullets go through enemies
+        self.has_shield = False    # Take half damage
+        self.extra_jump = False    # Triple jump instead of double
 
     def get_rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
@@ -32,25 +40,29 @@ class Player:
     def handle_input(self, keys):
         # Horizontal movement with A and D
         self.vel_x = 0
+        move_speed = self.speed * 1.5 if self.speed_boost else self.speed
         if keys[pygame.K_a]:
-            self.vel_x = -self.speed
+            self.vel_x = -move_speed
             self.facing_right = False
         if keys[pygame.K_d]:
-            self.vel_x = self.speed
+            self.vel_x = move_speed
             self.facing_right = True
 
-        # Weapon switching with 1, 2, 3 keys
+        # Weapon switching with 1, 2, 3, 4 keys
         if keys[pygame.K_1]:
             self.weapon = 'normal'
         if keys[pygame.K_2] and self.has_rapid:
             self.weapon = 'rapid'
         if keys[pygame.K_3] and self.has_spread:
             self.weapon = 'spread'
+        if keys[pygame.K_4] and self.has_missile:
+            self.weapon = 'missile'
 
         # Jump handled separately via key event for double jump
 
     def jump(self, sound_gen=None):
-        if self.jump_count < self.max_jumps:
+        max_allowed = 3 if self.extra_jump else self.max_jumps
+        if self.jump_count < max_allowed:
             self.vel_y = self.jump_power
             if sound_gen:
                 if self.jump_count == 0:
@@ -72,8 +84,8 @@ class Player:
                 if sound_gen:
                     sound_gen.play("shoot")
             elif self.weapon == 'rapid':
-                bullets.append(Bullet(bullet_x, bullet_y, direction, speed=16))
-                self.shoot_cooldown = 8
+                bullets.append(Bullet(bullet_x, bullet_y, direction, speed=18))
+                self.shoot_cooldown = 5
                 if sound_gen:
                     sound_gen.play("shoot_rapid")
             elif self.weapon == 'spread':
@@ -84,6 +96,11 @@ class Player:
                 self.shoot_cooldown = 20
                 if sound_gen:
                     sound_gen.play("shoot_spread")
+            elif self.weapon == 'missile':
+                bullets.append(Missile(bullet_x, bullet_y, direction))
+                self.shoot_cooldown = 25  # Slower fire rate for powerful missiles
+                if sound_gen:
+                    sound_gen.play("shoot")
 
     def update(self, platforms):
         # Apply gravity

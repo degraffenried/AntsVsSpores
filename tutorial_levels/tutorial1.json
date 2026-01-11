@@ -1,0 +1,13 @@
+{
+    "name": "Tutorial 1 - Movement",
+    "width": 1200,
+    "height": 800,
+    "background_color": [130, 150, 170],
+    "tutorial_prompt": "Use A and D to move left and right. Walk to the portal!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 1000, "y": 690},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [100, 100, 100]}
+    ],
+    "monsters": []
+}

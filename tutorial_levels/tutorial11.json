@@ -1,0 +1,21 @@
+{
+    "name": "Tutorial 11 - Bouncy Platforms",
+    "width": 1200,
+    "height": 800,
+    "background_color": [150, 140, 160],
+    "tutorial_prompt": "BOUNCY PLATFORMS: Pink platforms with springs! They launch you HIGH into the air!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 600, "y": 100},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 300, "height": 50, "color": [100, 100, 100]},
+        {"x": 400, "y": 750, "width": 150, "height": 20, "color": [200, 80, 150], "bouncy": true},
+        {"x": 700, "y": 500, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 400, "y": 350, "width": 150, "height": 20, "color": [200, 80, 150], "bouncy": true},
+        {"x": 700, "y": 200, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 100, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "flyer", "x": 750, "y": 350, "patrol_range": 80, "speed": 2, "health": 1}
+    ]
+}

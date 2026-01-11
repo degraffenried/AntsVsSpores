@@ -1,0 +1,186 @@
+{
+    "name": "bouncetest",
+    "width": 1250,
+    "height": 900,
+    "background_color": [
+        30,
+        35,
+        45
+    ],
+    "player_spawn": {
+        "x": 60,
+        "y": 620
+    },
+    "portal_position": {
+        "x": 40,
+        "y": 40
+    },
+    "spore_position": {
+        "x": 920,
+        "y": 700
+    },
+    "platforms": [
+        {
+            "x": 600,
+            "y": 400,
+            "width": 60,
+            "height": 40,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 180,
+            "y": 580,
+            "width": 260,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 20,
+            "y": 700,
+            "width": 600,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 840,
+            "y": 740,
+            "width": 300,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 1120,
+            "y": 180,
+            "width": 40,
+            "height": 340,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 400,
+            "y": 260,
+            "width": 140,
+            "height": 20,
+            "color": [
+                200,
+                80,
+                150
+            ],
+            "bouncy": true
+        },
+        {
+            "x": 480,
+            "y": 480,
+            "width": 120,
+            "height": 20,
+            "color": [
+                200,
+                80,
+                150
+            ],
+            "bouncy": true
+        },
+        {
+            "x": 40,
+            "y": 360,
+            "width": 180,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 260,
+            "y": 220,
+            "width": 80,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": -20,
+            "y": 0,
+            "width": 40,
+            "height": 700,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 40,
+            "y": 0,
+            "width": 1160,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 640,
+            "y": 480,
+            "width": 380,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        }
+    ],
+    "monsters": [
+        {
+            "type": "snake",
+            "x": 820,
+            "y": 380,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3,
+            "aggro_duration": 180
+        },
+        {
+            "type": "snake",
+            "x": 1120,
+            "y": 140,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3,
+            "aggro_duration": 180
+        },
+        {
+            "type": "blob",
+            "x": 1020,
+            "y": 700,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        }
+    ]
+}

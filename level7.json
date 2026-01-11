@@ -2,7 +2,7 @@
     "name": "Level 7 - The Final Challenge",
     "width": 1200,
     "height": 800,
-    "background_color": [40, 10, 10],
+    "background_color": [160, 120, 120],
     "player_spawn": {
         "x": 50,
         "y": 700

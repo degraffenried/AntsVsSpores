@@ -1,0 +1,180 @@
+{
+    "name": "RazerbackTest",
+    "width": 1250,
+    "height": 900,
+    "background_color": [
+        130,
+        145,
+        160
+    ],
+    "player_spawn": {
+        "x": 100,
+        "y": 650
+    },
+    "portal_position": {
+        "x": 1080,
+        "y": 60
+    },
+    "spore_position": {
+        "x": 1100,
+        "y": 740
+    },
+    "platforms": [
+        {
+            "x": 0,
+            "y": 780,
+            "width": 1200,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 1160,
+            "y": 280,
+            "width": 40,
+            "height": 500,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 0,
+            "y": 280,
+            "width": 40,
+            "height": 500,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 540,
+            "y": 500,
+            "width": 560,
+            "height": 40,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 340,
+            "y": 640,
+            "width": 80,
+            "height": 20,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 260,
+            "y": 220,
+            "width": 300,
+            "height": 40,
+            "color": [
+                100,
+                80,
+                60
+            ]
+        },
+        {
+            "x": 140,
+            "y": 200,
+            "width": 40,
+            "height": 20,
+            "color": [
+                180,
+                120,
+                60
+            ],
+            "unstable": true
+        },
+        {
+            "x": 200,
+            "y": 200,
+            "width": 80,
+            "height": 20,
+            "color": [
+                180,
+                120,
+                60
+            ],
+            "unstable": true
+        },
+        {
+            "x": 900,
+            "y": 200,
+            "width": 140,
+            "height": 20,
+            "color": [
+                180,
+                120,
+                60
+            ],
+            "unstable": true
+        },
+        {
+            "x": 680,
+            "y": 300,
+            "width": 40,
+            "height": 20,
+            "color": [
+                200,
+                80,
+                150
+            ],
+            "bouncy": true
+        }
+    ],
+    "monsters": [
+        {
+            "type": "razorback",
+            "x": 840,
+            "y": 700,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "razorback",
+            "x": 1020,
+            "y": 420,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "razorback",
+            "x": 400,
+            "y": 160,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "razorback",
+            "x": 20,
+            "y": 240,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        },
+        {
+            "type": "razorback",
+            "x": 380,
+            "y": 580,
+            "patrol_range": 80,
+            "speed": 2,
+            "health": 3
+        }
+    ]
+}

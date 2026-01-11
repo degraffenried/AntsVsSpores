@@ -2,7 +2,7 @@
     "name": "Level 6 - The Depths",
     "width": 1200,
     "height": 800,
-    "background_color": [20, 15, 30],
+    "background_color": [130, 120, 150],
     "player_spawn": {
         "x": 50,
         "y": 700

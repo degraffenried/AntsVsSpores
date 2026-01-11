@@ -4,6 +4,7 @@ from .flyer import Flyer
 from .spider import Spider
 from .blob import Blob
 from .taterbug import Taterbug
+from .razorback import Razorback
 from .chompy import Chompy
 from .snake import Snake
 from .shriek import Shriek
@@ -26,6 +27,9 @@ def create_monster(data):
     elif monster_type == 'taterbug':
         return Taterbug(data['x'], data['y'], data['patrol_range'],
                         data['speed'], data['health'])
+    elif monster_type == 'razorback':
+        return Razorback(data['x'], data['y'], data['patrol_range'],
+                         data['speed'], data['health'])
     elif monster_type == 'chompy':
         return Chompy(data['x'], data['y'], data['patrol_range'],
                      data['speed'], data['health'])
@@ -47,6 +51,7 @@ __all__ = [
     'Spider',
     'Blob',
     'Taterbug',
+    'Razorback',
     'Chompy',
     'Snake',
     'Shriek',

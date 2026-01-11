@@ -15,9 +15,9 @@ class LevelEditor:
 
         # Tools available
         self.tools = [
-            "platform", "bouncy", "spawn", "portal", "spore",
+            "platform", "bouncy", "unstable", "spawn", "portal", "spore",
             "walker", "flyer", "spider", "blob",
-            "taterbug", "chompy", "snake", "shriek", "delete"
+            "taterbug", "razorback", "chompy", "snake", "shriek", "delete"
         ]
         self.selected_tool = 0
 
@@ -27,7 +27,7 @@ class LevelEditor:
         self.spawn_point = {"x": 100, "y": 650}
         self.portal_position = {"x": 560, "y": 10}  # Default top center
         self.spore_position = {"x": 600, "y": 400}  # Default center
-        self.background_color = [30, 35, 45]
+        self.background_color = [130, 145, 160]
 
         # Editor state
         self.grid_snap = True
@@ -119,7 +119,7 @@ class LevelEditor:
         self.spawn_point = {"x": 100, "y": 650}
         self.portal_position = {"x": 560, "y": 10}
         self.spore_position = {"x": 600, "y": 400}
-        self.background_color = [30, 35, 45]
+        self.background_color = [130, 145, 160]
         self.selected_element = None
         self.current_filename = None
 
@@ -283,10 +283,17 @@ class LevelEditor:
             self.creating_platform = True
             self.platform_start = snapped
             self._creating_bouncy = False
+            self._creating_unstable = False
         elif tool == "bouncy":
             self.creating_platform = True
             self.platform_start = snapped
             self._creating_bouncy = True
+            self._creating_unstable = False
+        elif tool == "unstable":
+            self.creating_platform = True
+            self.platform_start = snapped
+            self._creating_bouncy = False
+            self._creating_unstable = True
         elif tool == "spawn":
             self.spawn_point = {"x": snapped[0], "y": snapped[1]}
             self._mark_dirty()
@@ -298,7 +305,7 @@ class LevelEditor:
             self._mark_dirty()
         elif tool == "delete":
             self._delete_at(pos)
-        elif tool in ["walker", "flyer", "spider", "blob", "taterbug", "chompy", "snake", "shriek"]:
+        elif tool in ["walker", "flyer", "spider", "blob", "taterbug", "razorback", "chompy", "snake", "shriek"]:
             monster_data = {
                 "type": tool,
                 "x": snapped[0],
@@ -334,12 +341,23 @@ class LevelEditor:
                 height = 20
 
             is_bouncy = getattr(self, '_creating_bouncy', False)
+            is_unstable = getattr(self, '_creating_unstable', False)
+
+            if is_bouncy:
+                color = [200, 80, 150]
+            elif is_unstable:
+                color = [180, 120, 60]
+            else:
+                color = [100, 80, 60]
+
             platform_data = {
                 "x": x, "y": y, "width": width, "height": height,
-                "color": [200, 80, 150] if is_bouncy else [100, 80, 60]
+                "color": color
             }
             if is_bouncy:
                 platform_data["bouncy"] = True
+            if is_unstable:
+                platform_data["unstable"] = True
 
             self.platforms.append(platform_data)
             self._mark_dirty()
@@ -347,6 +365,7 @@ class LevelEditor:
         self.creating_platform = False
         self.platform_start = None
         self._creating_bouncy = False
+        self._creating_unstable = False
 
     def _select_tool(self, pos):
         """Select a tool from the panel"""
@@ -587,7 +606,7 @@ class LevelEditor:
             self.spawn_point = data.get("player_spawn", {"x": 100, "y": 650})
             self.portal_position = data.get("portal_position", {"x": 560, "y": 10})
             self.spore_position = data.get("spore_position", {"x": 600, "y": 400})
-            self.background_color = data.get("background_color", [30, 35, 45])
+            self.background_color = data.get("background_color", [130, 145, 160])
             self.current_filename = filename
             self._mark_clean()
 
@@ -641,6 +660,20 @@ class LevelEditor:
                     pygame.draw.circle(self.screen, (255, 150, 200), (int(coil_x), int(coil_y)), 5)
                 pygame.draw.rect(self.screen, (255, 200, 230),
                                (p["x"], p["y"], p["width"], p["height"]), 2)
+            elif p.get("unstable", False):
+                # Unstable platform - orange/brown with crack pattern
+                pygame.draw.rect(self.screen, (180, 120, 60),
+                               (p["x"], p["y"], p["width"], p["height"]))
+                # Draw crack lines
+                crack_color = (100, 60, 40)
+                cx = p["x"] + p["width"] // 3
+                pygame.draw.line(self.screen, crack_color,
+                               (cx, p["y"]), (cx + 10, p["y"] + p["height"]), 2)
+                cx2 = p["x"] + p["width"] * 2 // 3
+                pygame.draw.line(self.screen, crack_color,
+                               (cx2, p["y"] + p["height"]), (cx2 - 5, p["y"]), 2)
+                pygame.draw.rect(self.screen, (220, 160, 100),
+                               (p["x"], p["y"], p["width"], p["height"]), 2)
             else:
                 pygame.draw.rect(self.screen, tuple(p["color"]),
                                (p["x"], p["y"], p["width"], p["height"]))
@@ -655,8 +688,16 @@ class LevelEditor:
             w = max(40, abs(mouse_pos[0] - self.platform_start[0]))
             h = max(20, abs(mouse_pos[1] - self.platform_start[1]))
             is_bouncy = getattr(self, '_creating_bouncy', False)
-            preview_color = (200, 80, 150) if is_bouncy else (100, 80, 60)
-            border_color = (255, 150, 200) if is_bouncy else (255, 255, 100)
+            is_unstable = getattr(self, '_creating_unstable', False)
+            if is_bouncy:
+                preview_color = (200, 80, 150)
+                border_color = (255, 150, 200)
+            elif is_unstable:
+                preview_color = (180, 120, 60)
+                border_color = (220, 160, 100)
+            else:
+                preview_color = (100, 80, 60)
+                border_color = (255, 255, 100)
             pygame.draw.rect(self.screen, preview_color, (x, y, w, h))
             pygame.draw.rect(self.screen, border_color, (x, y, w, h), 2)
 
@@ -692,6 +733,7 @@ class LevelEditor:
             "spider": (40, 40, 40),
             "blob": (100, 200, 100),
             "taterbug": (80, 80, 90),
+            "razorback": (120, 40, 40),
             "chompy": (200, 80, 80),
             "snake": (100, 180, 60),
             "shriek": (60, 20, 80)
@@ -777,6 +819,7 @@ class LevelEditor:
         return {
             "platform": (100, 80, 60),
             "bouncy": (200, 80, 150),
+            "unstable": (180, 120, 60),
             "spawn": (50, 150, 255),
             "portal": (100, 200, 255),
             "spore": (100, 255, 150),
@@ -785,6 +828,7 @@ class LevelEditor:
             "spider": (40, 40, 40),
             "blob": (100, 200, 100),
             "taterbug": (80, 80, 90),
+            "razorback": (120, 40, 40),
             "chompy": (200, 80, 80),
             "snake": (100, 180, 60),
             "shriek": (60, 20, 80),

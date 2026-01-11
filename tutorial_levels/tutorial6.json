@@ -1,0 +1,22 @@
+{
+    "name": "Tutorial 6 - Flyer Enemy",
+    "width": 1200,
+    "height": 800,
+    "background_color": [140, 130, 160],
+    "tutorial_prompt": "FLYER: Floats in the air and bobs up and down. Shoot them from platforms!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 600, "y": 300},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 400, "height": 50, "color": [100, 100, 100]},
+        {"x": 500, "y": 600, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 800, "y": 450, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 300, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 150, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "flyer", "x": 300, "y": 500, "patrol_range": 100, "speed": 2, "health": 1},
+        {"type": "flyer", "x": 700, "y": 350, "patrol_range": 80, "speed": 2, "health": 1},
+        {"type": "flyer", "x": 900, "y": 200, "patrol_range": 100, "speed": 2, "health": 1}
+    ]
+}

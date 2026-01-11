@@ -14,6 +14,7 @@ class MainMenu:
         game_beaten = self.save_manager.is_game_beaten()
         return [
             ("Start Game", True),
+            ("Tutorial", True),
             ("Endless Mode", game_beaten),
             ("Level Editor", game_beaten),
             ("Quit", True)
@@ -55,16 +56,15 @@ class MainMenu:
 
         # Title
         title_font = pygame.font.Font(None, 72)
-        title = title_font.render("PLATFORM SHOOTER", True, (100, 200, 255))
+        title = title_font.render("ANTS VS SPORES", True, (100, 200, 255))
         title_rect = title.get_rect(center=(self.screen_width // 2, 120))
         self.screen.blit(title, title_rect)
 
-        # Subtitle / Champion badge
+        # Subtitle - The Shop Update
         subtitle_font = pygame.font.Font(None, 36)
-        if self.save_manager.is_game_beaten():
-            badge = subtitle_font.render("~ CHAMPION ~", True, (255, 215, 0))
-            badge_rect = badge.get_rect(center=(self.screen_width // 2, 170))
-            self.screen.blit(badge, badge_rect)
+        badge = subtitle_font.render("~ THE SHOP UPDATE ~", True, (255, 215, 0))
+        badge_rect = badge.get_rect(center=(self.screen_width // 2, 170))
+        self.screen.blit(badge, badge_rect)
 
         # Menu options
         options = self.get_options()

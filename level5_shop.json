@@ -2,48 +2,50 @@
     "name": "Shop - Rest Area",
     "width": 1200,
     "height": 800,
-    "background_color": [20, 35, 20],
+    "background_color": [120, 160, 120],
     "is_shop": true,
     "player_spawn": {
         "x": 100,
         "y": 650
+    },
+    "portal_position": {
+        "x": 560,
+        "y": 60
     },
     "platforms": [
         {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [60, 80, 60]},
         {"x": 200, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
         {"x": 500, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
         {"x": 800, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
-        {"x": 100, "y": 450, "width": 150, "height": 20, "color": [80, 100, 80]},
-        {"x": 350, "y": 380, "width": 150, "height": 20, "color": [80, 100, 80]},
-        {"x": 600, "y": 300, "width": 150, "height": 20, "color": [80, 100, 80]},
-        {"x": 850, "y": 220, "width": 150, "height": 20, "color": [80, 100, 80]},
-        {"x": 500, "y": 140, "width": 200, "height": 20, "color": [100, 150, 100]},
-        {"x": 1000, "y": 380, "width": 150, "height": 20, "color": [80, 100, 80]}
+        {"x": 350, "y": 450, "width": 200, "height": 20, "color": [80, 100, 80]},
+        {"x": 650, "y": 450, "width": 200, "height": 20, "color": [80, 100, 80]},
+        {"x": 500, "y": 300, "width": 200, "height": 20, "color": [80, 100, 80]},
+        {"x": 500, "y": 150, "width": 200, "height": 20, "color": [100, 150, 100]}
     ],
     "monsters": [],
     "shop_items": [
         {
             "name": "Life Bundle",
             "type": "life_bundle",
-            "cost": 3,
+            "cost": 12,
             "description": "+3 Lives",
-            "x": 300,
-            "y": 550
-        },
-        {
-            "name": "Rapid Fire",
-            "type": "weapon_rapid",
-            "cost": 3,
-            "description": "Faster shooting",
-            "x": 600,
+            "x": 270,
             "y": 550
         },
         {
             "name": "Spread Shot",
             "type": "weapon_spread",
-            "cost": 5,
+            "cost": 10,
             "description": "3-way shot",
-            "x": 900,
+            "x": 570,
+            "y": 550
+        },
+        {
+            "name": "Damage Boost",
+            "type": "damage_boost",
+            "cost": 8,
+            "description": "2x bullet damage",
+            "x": 870,
             "y": 550
         }
     ]

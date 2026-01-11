@@ -1,0 +1,25 @@
+{
+    "name": "Tutorial 7 - Spider Enemy",
+    "width": 1200,
+    "height": 800,
+    "background_color": [120, 130, 140],
+    "tutorial_prompt": "SPIDER: Walks on ground but CLIMBS WALLS when it hits them! Watch out above!",
+    "player_spawn": {"x": 100, "y": 650},
+    "portal_position": {"x": 560, "y": 10},
+    "spore_position": {"x": 150, "y": 300},
+    "platforms": [
+        {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [100, 100, 100]},
+        {"x": 400, "y": 400, "width": 20, "height": 350, "color": [80, 80, 90]},
+        {"x": 780, "y": 400, "width": 20, "height": 350, "color": [80, 80, 90]},
+        {"x": 400, "y": 400, "width": 400, "height": 20, "color": [100, 80, 60]},
+        {"x": 100, "y": 550, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 100, "y": 400, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 100, "y": 250, "width": 150, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 250, "width": 200, "height": 20, "color": [100, 80, 60]},
+        {"x": 500, "y": 120, "width": 200, "height": 20, "color": [100, 80, 60]}
+    ],
+    "monsters": [
+        {"type": "spider", "x": 550, "y": 700, "patrol_range": 100, "speed": 2, "health": 2},
+        {"type": "spider", "x": 550, "y": 350, "patrol_range": 100, "speed": 2, "health": 2}
+    ]
+}
