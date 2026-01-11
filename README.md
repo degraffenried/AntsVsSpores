@@ -1,16 +1,20 @@
-# AntsVsSpores
+# Ants vs Spores
 
 A retro-style 2D platformer game built with Python and Pygame. Navigate through challenging levels, defeat various monsters, collect spores, and reach the portal to progress.
 
 ## Features
 
 - **7 Story Levels** - Progress through increasingly difficult platforming challenges
-- **Endless Mode** - Procedurally generated levels with scaling difficulty (unlocks after beating the game)
-- **Level Editor** - Create and save your own custom levels with movable portals and spawn points (unlocks after beating the game)
-- **8 Monster Types** - Each with unique AI behaviors and attack patterns
-- **3 Weapon Types** - Normal, Rapid Fire, and Spread Shot
-- **Shop System** - Spend collected spores on upgrades like extra lives and weapon unlocks
-- **Double Jump** - Navigate tricky platforming sections with a double jump ability
+- **Endless Mode** - Procedurally generated levels with scaling difficulty and shops every 5 levels
+- **Tutorial Mode** - Learn the game mechanics through guided tutorial levels
+- **Level Editor** - Create and save your own custom levels with all platform types and monsters
+- **9 Monster Types** - Each with unique AI behaviors and attack patterns
+- **4 Weapon Types** - Normal, Rapid Fire, Spread Shot, and Homing Missiles
+- **7 Power-ups** - Customize your playstyle with various upgrades
+- **Special Platforms** - Bouncy platforms and unstable crumbling platforms
+- **Shop System** - Spend collected spores on weapons, power-ups, and extra lives
+- **Double/Triple Jump** - Navigate tricky platforming sections
+- **Pause Menu** - Pause anytime with ESC or P
 - **Procedural 8-bit Audio** - Retro sound effects and music generated in real-time
 - **Save System** - Progress is saved automatically
 
@@ -55,12 +59,13 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 |--------|-----|
 | Move Left | A |
 | Move Right | D |
-| Jump / Double Jump | Space |
-| Shoot | Right Shift |
+| Jump / Double Jump / Triple Jump | Space |
+| Shoot | Right Shift (hold for rapid fire) |
 | Weapon: Normal | 1 |
 | Weapon: Rapid Fire | 2 (when unlocked) |
 | Weapon: Spread Shot | 3 (when unlocked) |
-| Pause | Escape |
+| Weapon: Missile | 4 (when unlocked) |
+| Pause | Escape or P |
 | Return to Menu | M (on victory/game over) |
 
 ### Level Editor Controls
@@ -70,6 +75,7 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 | Place Element | Left Click |
 | Delete Element | Right Click |
 | Select Tool | 1-9, 0 |
+| Cycle Tools | Q/E or Scroll Wheel |
 | Toggle Grid | G |
 | New Level | Ctrl+N |
 | Save Level | Ctrl+S |
@@ -82,7 +88,8 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 - Defeat all monsters in a level to spawn the **spore**
 - Collect the spore and reach the **portal** to complete the level
 - Spores are currency - spend them in the shop on upgrades
-- Each monster type has unique behavior and requires different tactics:
+- Talk to the shop ant with Enter - they might give you a gift!
+- Each monster type has unique behavior and requires different tactics
 
 ### Monsters
 
@@ -93,17 +100,39 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 | **Spider** | Tracks toward player, can climb walls to reach higher platforms |
 | **Blob** | Terrified gooey creature that sloshes away from player, flattens when scared |
 | **Taterbug** | Armored bug that curls into an invulnerable rolling ball when shot |
+| **Razorback** | Aggressive taterbug variant with spikes that charges at the player, rolls up defensively when hit |
 | **Chompy** | Aggressive charger that rushes at player when in line of sight |
 | **Snake** | Multi-segment slithering predator that lunges and wraps around player to bite |
 | **Shriek** | Territorial bat that dive-bombs when player enters its territory |
+
+### Platforms
+
+| Platform | Description |
+|----------|-------------|
+| **Normal** | Standard solid platform |
+| **Bouncy** | Pink platforms that launch the player high into the air |
+| **Unstable** | Orange/brown platforms that shake and crumble after standing on them for 3 seconds |
 
 ## Weapons
 
 | Weapon | Description |
 |--------|-------------|
 | **Normal** | Standard single shot, balanced fire rate |
-| **Rapid Fire** | Faster firing rate, good for aggressive play |
-| **Spread Shot** | 3-way shot pattern, covers more area but slower |
+| **Rapid Fire** | Hold to shoot continuously at a faster rate |
+| **Spread Shot** | 3-way shot pattern, covers more area |
+| **Missile** | Homing missiles that track nearby enemies |
+
+## Power-ups
+
+| Power-up | Description |
+|----------|-------------|
+| **Life Bundle** | Gain 3 extra lives |
+| **Damage Boost** | Bullets deal 2x damage |
+| **Speed Boost** | Move 50% faster |
+| **Pierce** | Bullets pass through enemies |
+| **Shield** | Take half damage from enemies |
+| **Extra Jump** | Gain a third jump |
+| **Magnet** | Attract spores from a distance |
 
 ## Project Structure
 
@@ -111,8 +140,8 @@ A retro-style 2D platformer game built with Python and Pygame. Navigate through 
 AntsVsSpores/
 ├── game.py              # Main game loop and state management
 ├── player.py            # Player class, movement, and weapons
-├── bullet.py            # Projectile logic
-├── game_platform.py     # Platform class
+├── bullet.py            # Projectile and missile logic
+├── game_platform.py     # Platform class (normal, bouncy, unstable)
 ├── portal.py            # Level exit portal
 ├── spore.py             # Collectible spores
 ├── shop_item.py         # Shop items and upgrades
@@ -129,6 +158,7 @@ AntsVsSpores/
 │   ├── spider.py        # Spider monster
 │   ├── blob.py          # Blob monster
 │   ├── taterbug.py      # Taterbug monster
+│   ├── razorback.py     # Razorback monster
 │   ├── chompy.py        # Chompy monster
 │   ├── snake.py         # Snake monster
 │   └── shriek.py        # Shriek monster
@@ -142,6 +172,7 @@ AntsVsSpores/
 ├── level6.json          # Level 6 data
 ├── level7.json          # Level 7 data
 ├── custom_levels/       # User-created levels
+├── tutorial_levels/     # Tutorial level data
 └── requirements.txt     # Python dependencies
 ```
 
