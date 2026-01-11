@@ -74,7 +74,12 @@ class Chompy(Monster):
         for platform in platforms:
             if monster_rect.colliderect(platform.rect):
                 if self.vel_y > 0 and monster_rect.bottom > platform.rect.top and monster_rect.top < platform.rect.top:
+                    # Falling - land on top
                     self.y = platform.rect.top - self.height
+                    self.vel_y = 0
+                elif self.vel_y < 0 and monster_rect.top < platform.rect.bottom and monster_rect.bottom > platform.rect.bottom:
+                    # Moving up - push down from platform bottom
+                    self.y = platform.rect.bottom
                     self.vel_y = 0
 
     def draw(self, screen):

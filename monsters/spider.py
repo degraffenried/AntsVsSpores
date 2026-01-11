@@ -87,6 +87,11 @@ class Spider(Monster):
                         if self.y < platform.rect.top:
                             self.y = platform.rect.top - self.height
                             self.vel_y = 0
+                    # Vertical collision (hitting platform from below)
+                    elif self.vel_y < 0 and self.y < platform.rect.bottom:
+                        if self.y + self.height > platform.rect.bottom:
+                            self.y = platform.rect.bottom
+                            self.vel_y = 0
                     # Horizontal collision (hitting a wall) - start climbing!
                     elif self.vel_y <= 0 or on_ground:
                         # Check if we hit the side of a platform

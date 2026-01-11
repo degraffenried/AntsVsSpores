@@ -45,7 +45,12 @@ class Walker(Monster):
         for platform in platforms:
             if monster_rect.colliderect(platform.rect):
                 if self.vel_y > 0:
+                    # Falling - land on top
                     self.y = platform.rect.top - self.height
+                    self.vel_y = 0
+                elif self.vel_y < 0:
+                    # Moving up - push down from platform bottom
+                    self.y = platform.rect.bottom
                     self.vel_y = 0
 
     def draw(self, screen):

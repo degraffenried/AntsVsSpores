@@ -160,7 +160,12 @@ class Snake(Monster):
         for platform in platforms:
             if monster_rect.colliderect(platform.rect):
                 if self.vel_y > 0:
+                    # Falling - land on top
                     self.y = platform.rect.top - self.height
+                    self.vel_y = 0
+                elif self.vel_y < 0:
+                    # Moving up - push down from platform bottom
+                    self.y = platform.rect.bottom
                     self.vel_y = 0
 
         # Update position history for normal movement
@@ -241,11 +246,16 @@ class Snake(Monster):
         for platform in platforms:
             if monster_rect.colliderect(platform.rect):
                 if self.lunge_vel_y > 0:
+                    # Falling - land on top
                     self.y = platform.rect.top - self.height
                     self.is_lunging = False
                     self.lunge_vel_y = 0
                     self.lunge_vel_x = 0
                     return
+                elif self.lunge_vel_y < 0:
+                    # Moving up - push down from platform bottom
+                    self.y = platform.rect.bottom
+                    self.lunge_vel_y = 0
 
         # Check if fallen too far (missed the player)
         if self.y > self.spawn_y + 200:

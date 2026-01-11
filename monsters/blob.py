@@ -279,9 +279,15 @@ class Blob(Monster):
         feet_rect = pygame.Rect(self.back_x - self.base_radius, self.pool_y + self.base_radius,
                                 self.base_radius * 2, 10)
         for platform in platforms:
-            if feet_rect.colliderect(platform.rect) and self.vel_y > 0:
-                self.pool_y = platform.rect.top - self.base_radius * 1.5
-                self.vel_y = 0
+            if feet_rect.colliderect(platform.rect):
+                if self.vel_y > 0:
+                    # Falling - land on top
+                    self.pool_y = platform.rect.top - self.base_radius * 1.5
+                    self.vel_y = 0
+                elif self.vel_y < 0:
+                    # Moving up - push down from platform bottom
+                    self.pool_y = platform.rect.bottom - self.base_radius
+                    self.vel_y = 0
 
         self.y = self.pool_y
 
