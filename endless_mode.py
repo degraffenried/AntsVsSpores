@@ -18,6 +18,10 @@ class EndlessLevelGenerator:
         """Generate a random level, returns dict matching level JSON format"""
         self.level_count += 1
 
+        # Every 5 levels is a shop
+        if self.level_count % 5 == 0:
+            return self._generate_shop_level()
+
         level_data = {
             "name": f"Endless Level {self.level_count}",
             "width": self.screen_width,
@@ -25,7 +29,8 @@ class EndlessLevelGenerator:
             "background_color": self._random_background(),
             "player_spawn": self._generate_spawn(),
             "platforms": self._generate_platforms(),
-            "monsters": []
+            "monsters": [],
+            "is_shop": False
         }
 
         # Generate monsters on platforms
@@ -35,6 +40,66 @@ class EndlessLevelGenerator:
         self.difficulty = 1.0 + (self.level_count * 0.15)
 
         return level_data
+
+    def _generate_shop_level(self):
+        """Generate a shop level for endless mode"""
+        # Shop item costs scale with difficulty
+        base_cost = max(1, self.level_count // 5)
+
+        shop_items = [
+            {
+                "name": "Extra Life",
+                "type": "life",
+                "cost": base_cost,
+                "description": "+1 Life",
+                "x": 250,
+                "y": 550
+            },
+            {
+                "name": "Life Bundle",
+                "type": "life_bundle",
+                "cost": base_cost * 2,
+                "description": "+3 Lives",
+                "x": 450,
+                "y": 550
+            },
+            {
+                "name": "Rapid Fire",
+                "type": "weapon_rapid",
+                "cost": base_cost * 2,
+                "description": "Faster shooting",
+                "x": 650,
+                "y": 550
+            },
+            {
+                "name": "Spread Shot",
+                "type": "weapon_spread",
+                "cost": base_cost * 3,
+                "description": "3-way shot",
+                "x": 850,
+                "y": 550
+            }
+        ]
+
+        return {
+            "name": f"Endless Shop {self.level_count // 5}",
+            "width": self.screen_width,
+            "height": self.screen_height,
+            "background_color": [20, 35, 20],
+            "is_shop": True,
+            "player_spawn": {"x": 100, "y": 650},
+            "platforms": [
+                {"x": 0, "y": 750, "width": 1200, "height": 50, "color": [60, 80, 60]},
+                {"x": 150, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 400, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 650, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 900, "y": 600, "width": 200, "height": 20, "color": [80, 100, 80]},
+                {"x": 400, "y": 400, "width": 400, "height": 20, "color": [80, 100, 80]},
+                {"x": 500, "y": 200, "width": 200, "height": 20, "color": [100, 150, 100]}
+            ],
+            "monsters": [],
+            "shop_items": shop_items
+        }
 
     def _random_background(self):
         """Generate a random dark background color"""

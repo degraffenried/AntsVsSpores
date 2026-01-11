@@ -113,9 +113,14 @@ class Player:
             if player_rect.colliderect(platform.rect):
                 if self.vel_y > 0:
                     self.y = platform.rect.top - self.height
-                    self.vel_y = 0
-                    self.on_ground = True
-                    self.jump_count = 0
+                    # Check if platform is bouncy
+                    if getattr(platform, 'bouncy', False):
+                        self.vel_y = platform.bounce_power
+                        self.jump_count = 1  # Allow one more jump after bounce
+                    else:
+                        self.vel_y = 0
+                        self.on_ground = True
+                        self.jump_count = 0
                 elif self.vel_y < 0:
                     self.y = platform.rect.bottom
                     self.vel_y = 0
@@ -151,15 +156,61 @@ class Player:
                     self.vel_y = 0
 
     def draw(self, screen):
-        # Draw body
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
-        # Draw head
-        pygame.draw.circle(screen, (255, 220, 180),
-                          (int(self.x + self.width // 2), int(self.y + 12)), 12)
-        # Draw gun
+        # Ant colors
+        body_color = (45, 35, 30)  # Dark brown
+        highlight_color = (70, 55, 45)  # Lighter brown for highlights
+
+        cx = self.x + self.width // 2  # Center x
+
+        # Abdomen (rear, largest segment) - oval at bottom
+        abdomen_y = self.y + 45
+        pygame.draw.ellipse(screen, body_color, (cx - 12, abdomen_y, 24, 18))
+        pygame.draw.ellipse(screen, highlight_color, (cx - 8, abdomen_y + 2, 10, 6))
+
+        # Thorax (middle segment) - smaller oval
+        thorax_y = self.y + 30
+        pygame.draw.ellipse(screen, body_color, (cx - 8, thorax_y, 16, 18))
+        pygame.draw.ellipse(screen, highlight_color, (cx - 5, thorax_y + 3, 6, 5))
+
+        # Head (front segment) - circle
+        head_y = self.y + 15
+        pygame.draw.circle(screen, body_color, (int(cx), int(head_y)), 10)
+        pygame.draw.circle(screen, highlight_color, (int(cx - 2), int(head_y - 2)), 3)
+
+        # Eyes
+        eye_offset = 4 if self.facing_right else -4
+        pygame.draw.circle(screen, (20, 20, 20), (int(cx + eye_offset - 3), int(head_y - 2)), 3)
+        pygame.draw.circle(screen, (20, 20, 20), (int(cx + eye_offset + 3), int(head_y - 2)), 3)
+        # Eye shine
+        pygame.draw.circle(screen, (80, 80, 80), (int(cx + eye_offset - 2), int(head_y - 3)), 1)
+        pygame.draw.circle(screen, (80, 80, 80), (int(cx + eye_offset + 4), int(head_y - 3)), 1)
+
+        # Antennae
+        ant_dir = 1 if self.facing_right else -1
+        # Left antenna
+        pygame.draw.line(screen, body_color, (cx - 5, head_y - 8), (cx - 12, head_y - 18), 2)
+        pygame.draw.line(screen, body_color, (cx - 12, head_y - 18), (cx - 8 + ant_dir * 4, head_y - 22), 2)
+        # Right antenna
+        pygame.draw.line(screen, body_color, (cx + 5, head_y - 8), (cx + 12, head_y - 18), 2)
+        pygame.draw.line(screen, body_color, (cx + 12, head_y - 18), (cx + 8 + ant_dir * 4, head_y - 22), 2)
+
+        # Legs (3 pairs from thorax)
+        leg_color = (35, 28, 22)
+        for i, leg_y in enumerate([thorax_y + 4, thorax_y + 9, thorax_y + 14]):
+            # Left legs
+            pygame.draw.line(screen, leg_color, (cx - 8, leg_y), (cx - 18, leg_y + 8), 2)
+            pygame.draw.line(screen, leg_color, (cx - 18, leg_y + 8), (cx - 22, leg_y + 16), 2)
+            # Right legs
+            pygame.draw.line(screen, leg_color, (cx + 8, leg_y), (cx + 18, leg_y + 8), 2)
+            pygame.draw.line(screen, leg_color, (cx + 18, leg_y + 8), (cx + 22, leg_y + 16), 2)
+
+        # Mandibles
+        mand_x = cx + (6 if self.facing_right else -6)
+        pygame.draw.line(screen, (60, 45, 35), (cx - 4, head_y + 6), (mand_x - 6, head_y + 12), 2)
+        pygame.draw.line(screen, (60, 45, 35), (cx + 4, head_y + 6), (mand_x + 6, head_y + 12), 2)
+
+        # Gun held by front legs
         gun_x = self.x + self.width if self.facing_right else self.x - 15
         gun_y = self.y + self.height // 2 - 3
-        pygame.draw.rect(screen, (80, 80, 80), (gun_x, gun_y, 15, 6))
-        # Draw eye to show direction
-        eye_x = self.x + self.width // 2 + (4 if self.facing_right else -4)
-        pygame.draw.circle(screen, (0, 0, 0), (int(eye_x), int(self.y + 10)), 3)
+        pygame.draw.rect(screen, (60, 60, 65), (gun_x, gun_y, 15, 6))
+        pygame.draw.rect(screen, (80, 80, 85), (gun_x + 2, gun_y + 1, 11, 2))

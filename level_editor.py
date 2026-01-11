@@ -15,7 +15,7 @@ class LevelEditor:
 
         # Tools available
         self.tools = [
-            "platform", "spawn", "portal",
+            "platform", "bouncy", "spawn", "portal", "spore",
             "walker", "flyer", "spider", "blob",
             "taterbug", "chompy", "snake", "shriek", "delete"
         ]
@@ -26,6 +26,7 @@ class LevelEditor:
         self.monsters = []
         self.spawn_point = {"x": 100, "y": 650}
         self.portal_position = {"x": 560, "y": 10}  # Default top center
+        self.spore_position = {"x": 600, "y": 400}  # Default center
         self.background_color = [30, 35, 45]
 
         # Editor state
@@ -98,7 +99,8 @@ class LevelEditor:
             "platforms": copy.deepcopy(self.platforms),
             "monsters": copy.deepcopy(self.monsters),
             "spawn_point": copy.deepcopy(self.spawn_point),
-            "portal_position": copy.deepcopy(self.portal_position)
+            "portal_position": copy.deepcopy(self.portal_position),
+            "spore_position": copy.deepcopy(self.spore_position)
         }
 
     def _mark_dirty(self):
@@ -116,6 +118,7 @@ class LevelEditor:
         self.monsters = []
         self.spawn_point = {"x": 100, "y": 650}
         self.portal_position = {"x": 560, "y": 10}
+        self.spore_position = {"x": 600, "y": 400}
         self.background_color = [30, 35, 45]
         self.selected_element = None
         self.current_filename = None
@@ -279,11 +282,19 @@ class LevelEditor:
         if tool == "platform":
             self.creating_platform = True
             self.platform_start = snapped
+            self._creating_bouncy = False
+        elif tool == "bouncy":
+            self.creating_platform = True
+            self.platform_start = snapped
+            self._creating_bouncy = True
         elif tool == "spawn":
             self.spawn_point = {"x": snapped[0], "y": snapped[1]}
             self._mark_dirty()
         elif tool == "portal":
             self.portal_position = {"x": snapped[0], "y": snapped[1]}
+            self._mark_dirty()
+        elif tool == "spore":
+            self.spore_position = {"x": snapped[0], "y": snapped[1]}
             self._mark_dirty()
         elif tool == "delete":
             self._delete_at(pos)
@@ -322,14 +333,20 @@ class LevelEditor:
             if height < 15:
                 height = 20
 
-            self.platforms.append({
+            is_bouncy = getattr(self, '_creating_bouncy', False)
+            platform_data = {
                 "x": x, "y": y, "width": width, "height": height,
-                "color": [100, 80, 60]
-            })
+                "color": [200, 80, 150] if is_bouncy else [100, 80, 60]
+            }
+            if is_bouncy:
+                platform_data["bouncy"] = True
+
+            self.platforms.append(platform_data)
             self._mark_dirty()
 
         self.creating_platform = False
         self.platform_start = None
+        self._creating_bouncy = False
 
     def _select_tool(self, pos):
         """Select a tool from the panel"""
@@ -546,6 +563,7 @@ class LevelEditor:
             "background_color": self.background_color,
             "player_spawn": self.spawn_point,
             "portal_position": self.portal_position,
+            "spore_position": self.spore_position,
             "platforms": self.platforms,
             "monsters": self.monsters
         }
@@ -568,6 +586,7 @@ class LevelEditor:
             self.monsters = data.get("monsters", [])
             self.spawn_point = data.get("player_spawn", {"x": 100, "y": 650})
             self.portal_position = data.get("portal_position", {"x": 560, "y": 10})
+            self.spore_position = data.get("spore_position", {"x": 600, "y": 400})
             self.background_color = data.get("background_color", [30, 35, 45])
             self.current_filename = filename
             self._mark_clean()
@@ -581,6 +600,7 @@ class LevelEditor:
             "background_color": self.background_color,
             "player_spawn": self.spawn_point,
             "portal_position": self.portal_position,
+            "spore_position": self.spore_position,
             "platforms": self.platforms,
             "monsters": self.monsters
         }
@@ -609,10 +629,23 @@ class LevelEditor:
 
         # Draw platforms
         for p in self.platforms:
-            pygame.draw.rect(self.screen, tuple(p["color"]),
-                           (p["x"], p["y"], p["width"], p["height"]))
-            pygame.draw.rect(self.screen, (200, 200, 200),
-                           (p["x"], p["y"], p["width"], p["height"]), 1)
+            if p.get("bouncy", False):
+                # Bouncy platform - pink with spring pattern
+                pygame.draw.rect(self.screen, (200, 80, 150),
+                               (p["x"], p["y"], p["width"], p["height"]))
+                # Spring coils
+                num_coils = max(3, p["width"] // 25)
+                for i in range(num_coils):
+                    coil_x = p["x"] + (p["width"] / num_coils) * (i + 0.5)
+                    coil_y = p["y"] + p["height"] // 2
+                    pygame.draw.circle(self.screen, (255, 150, 200), (int(coil_x), int(coil_y)), 5)
+                pygame.draw.rect(self.screen, (255, 200, 230),
+                               (p["x"], p["y"], p["width"], p["height"]), 2)
+            else:
+                pygame.draw.rect(self.screen, tuple(p["color"]),
+                               (p["x"], p["y"], p["width"], p["height"]))
+                pygame.draw.rect(self.screen, (200, 200, 200),
+                               (p["x"], p["y"], p["width"], p["height"]), 1)
 
         # Draw platform preview when creating
         if self.creating_platform and self.platform_start:
@@ -621,8 +654,11 @@ class LevelEditor:
             y = min(self.platform_start[1], mouse_pos[1])
             w = max(40, abs(mouse_pos[0] - self.platform_start[0]))
             h = max(20, abs(mouse_pos[1] - self.platform_start[1]))
-            pygame.draw.rect(self.screen, (100, 80, 60, 128), (x, y, w, h))
-            pygame.draw.rect(self.screen, (255, 255, 100), (x, y, w, h), 2)
+            is_bouncy = getattr(self, '_creating_bouncy', False)
+            preview_color = (200, 80, 150) if is_bouncy else (100, 80, 60)
+            border_color = (255, 150, 200) if is_bouncy else (255, 255, 100)
+            pygame.draw.rect(self.screen, preview_color, (x, y, w, h))
+            pygame.draw.rect(self.screen, border_color, (x, y, w, h), 2)
 
         # Draw spawn point
         pygame.draw.circle(self.screen, (50, 150, 255),
@@ -639,6 +675,15 @@ class LevelEditor:
         pygame.draw.rect(self.screen, (255, 255, 255), (portal_x, portal_y, 80, 60), 2)
         portal_text = self.font.render("PORTAL", True, (255, 255, 255))
         self.screen.blit(portal_text, (portal_x + 10, portal_y + 20))
+
+        # Draw spore spawn indicator
+        spore_x = self.spore_position["x"]
+        spore_y = self.spore_position["y"]
+        pygame.draw.circle(self.screen, (100, 255, 150), (spore_x + 15, spore_y + 15), 18)
+        pygame.draw.circle(self.screen, (150, 255, 180), (spore_x + 12, spore_y + 10), 6)
+        pygame.draw.circle(self.screen, (255, 255, 255), (spore_x + 15, spore_y + 15), 18, 2)
+        spore_text = self.font.render("SPORE", True, (100, 255, 150))
+        self.screen.blit(spore_text, (spore_x, spore_y - 20))
 
         # Draw monsters
         monster_colors = {
@@ -731,8 +776,10 @@ class LevelEditor:
         """Get color mapping for tools"""
         return {
             "platform": (100, 80, 60),
+            "bouncy": (200, 80, 150),
             "spawn": (50, 150, 255),
             "portal": (100, 200, 255),
+            "spore": (100, 255, 150),
             "walker": (200, 50, 50),
             "flyer": (150, 50, 200),
             "spider": (40, 40, 40),

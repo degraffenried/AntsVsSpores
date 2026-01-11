@@ -132,7 +132,7 @@ def main():
             player.has_rapid = game_state.has_rapid
             player.has_spread = game_state.has_spread
 
-        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'], p.get('bouncy', False))
                     for p in map_data['platforms']]
         monsters = [create_monster(m) for m in map_data['monsters']]
         monsters = [m for m in monsters if m is not None]
@@ -220,7 +220,7 @@ def main():
 
         if endless:
             player = Player(map_data['player_spawn']['x'], map_data['player_spawn']['y'])
-            platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+            platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'], p.get('bouncy', False))
                         for p in map_data['platforms']]
             monsters = [create_monster(m) for m in map_data['monsters']]
             monsters = [m for m in monsters if m is not None]
@@ -301,7 +301,7 @@ def main():
                         pygame.display.set_caption("Test Play - Press ESC to return")
                         test_data = level_editor.get_level_data()
                         player = Player(test_data['player_spawn']['x'], test_data['player_spawn']['y'])
-                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'], p.get('bouncy', False))
                                     for p in test_data['platforms']]
                         monsters = [create_monster(m) for m in test_data['monsters']]
                         monsters = [m for m in monsters if m is not None]
@@ -489,7 +489,15 @@ def main():
 
                 # Check if all enemies defeated - spawn spore (not in shop)
                 if not is_shop and len(monsters) == 0 and not spore_spawned:
-                    spore = Spore(screen_width // 2, screen_height // 2)
+                    # Use custom spore position if available
+                    if level_data and level_data.get('map_data'):
+                        spore_pos = level_data['map_data'].get('spore_position', {})
+                        spore_x = spore_pos.get('x', screen_width // 2)
+                        spore_y = spore_pos.get('y', screen_height // 2)
+                    else:
+                        spore_x = screen_width // 2
+                        spore_y = screen_height // 2
+                    spore = Spore(spore_x, spore_y)
                     spore_spawned = True
                     sound_gen.play("spore_spawn")
 
@@ -548,10 +556,11 @@ def main():
                     # Handle endless mode - generate next level
                     elif is_endless_mode:
                         endless_level += 1
-                        # Spores scale with endless level
-                        game_state.spore_count += endless_level
-                        # Life bonus every 3 levels
-                        if endless_level % 3 == 0:
+                        # Spores scale with endless level (not for shop levels)
+                        if not is_shop:
+                            game_state.spore_count += endless_level
+                        # Life bonus every 3 levels (not shop levels)
+                        if endless_level % 3 == 0 and endless_level % 5 != 0:
                             game_state.lives += 1
                             sound_gen.play("extra_life")
 
@@ -560,7 +569,7 @@ def main():
                         player.has_rapid = player_state['has_rapid']
                         player.has_spread = player_state['has_spread']
                         player.weapon = player_state['weapon']
-                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'])
+                        platforms = [Platform(p['x'], p['y'], p['width'], p['height'], p['color'], p.get('bouncy', False))
                                     for p in map_data['platforms']]
                         monsters = [create_monster(m) for m in map_data['monsters']]
                         monsters = [m for m in monsters if m is not None]
@@ -570,8 +579,30 @@ def main():
                         bg_color = tuple(map_data['background_color'])
                         has_spore = False
                         spore_spawned = False
-                        is_shop = False
+
+                        # Check if this is a shop level
+                        is_shop = map_data.get('is_shop', False)
                         shop_items = []
+                        if is_shop:
+                            portal.activate()  # Portal always active in shop
+                            for item_data in map_data.get('shop_items', []):
+                                shop_items.append(ShopItem(
+                                    item_data['name'],
+                                    item_data['type'],
+                                    item_data['cost'],
+                                    item_data['description'],
+                                    item_data['x'],
+                                    item_data['y']
+                                ))
+                            # Switch to shop music
+                            if current_music != 'shop_theme':
+                                music_gen.play('shop_theme')
+                                current_music = 'shop_theme'
+                        else:
+                            # Switch back to main theme if coming from shop
+                            if current_music != 'main_theme':
+                                music_gen.play('main_theme')
+                                current_music = 'main_theme'
 
                         # Update endless stats
                         save_manager.update_endless_stats(endless_level, game_state.total_score)
@@ -645,6 +676,7 @@ def main():
         portal.draw(screen)
 
         for platform in platforms:
+            platform.update()
             platform.draw(screen)
 
         # Draw shop items
